@@ -1,0 +1,53 @@
+module ietf-l3-isis-topology {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-l3-isis-topology";
+  prefix isis-topology;
+
+  import ietf-network {
+    prefix nw;
+  }
+  import ietf-l3-unicast-topology {
+    prefix l3t;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  organization
+    "TeraFlowSDN";
+  contact
+    "TFS";
+  description
+    "IS-IS Topology extensions matching user requirements.";
+
+  revision 2025-02-19 {
+    description
+      "Initial revision.";
+  }
+
+  augment "/nw:networks/nw:network/nw:network-types" {
+    container isis-topology {
+      presence "Indicates IS-IS topology";
+    }
+  }
+
+  augment "/nw:networks/nw:network/nw:node/l3t:l3-node-attributes" {
+    container isis-node-attributes {
+      leaf node-name {
+        type string;
+      }
+      leaf-list router-id {
+        type inet:ip-address;
+      }
+      leaf-list area-address {
+         type string;
+      }
+      leaf system-id {
+        type string;
+      }
+      leaf level {
+        type uint8;
+      }
+    }
+  }
+}

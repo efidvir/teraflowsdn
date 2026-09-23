@@ -1,0 +1,52 @@
+{
+   "tapi-connectivity:connectivity-service" : [
+      {
+         "connectivity-direction" : "",
+         "end-point" : [
+            {
+               "direction" : "",
+               "layer-protocol-name" : "",
+               "layer-protocol-qualifier" : "",
+               "local-id" : "",
+               "service-interface-point" : {
+                  "service-interface-point-uuid" : ""
+               },
+
+               "tapi-photonic-media:media-channel-connectivity-service-end-point-spec":{
+                  "mc-config":{
+                     "spectrum":{
+                        "lower-frequency": "",
+                        "upper-frequency": "",
+                        "frequency-constraint":{
+                           "adjustment-granularity" : "",
+                           "grid-type": ""
+                        }
+                     }
+                  }
+               }
+            },
+            {
+               "direction" : "",
+               "layer-protocol-name" : "",
+               "layer-protocol-qualifier" : "",
+               "local-id" : "",
+               "service-interface-point" : {
+                  "service-interface-point-uuid" : ""
+               }
+            }
+         ],
+         "layer-protocol-name" : "",
+         "layer-protocol-qualifier" : "",
+         "requested-capacity" : {
+            "total-size" : {
+               "unit" : "",
+               "value" : ""
+            }
+         },
+         "include-link":[
+         ],
+         "route-objective-function" : "10000",
+         "uuid" : ""
+      }
+   ]
+}

@@ -1,0 +1,469 @@
+# Copyright 2022-2026 ETSI SDG TeraFlowSDN (TFS) (https://tfs.etsi.org/)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Build, tag, and push the Docker image to the GitLab Docker registry
+build ryu-openflow:
+  timeout: 20m
+  variables:
+    TEST_NAME: 'ryu-openflow'
+    IMAGE_TAG: 'mr$CI_MERGE_REQUEST_IID'
+  stage: build
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker ps -aq | xargs -r docker rm -f
+  script:
+    # Build Ryu container
+    - docker buildx build -t "$CI_REGISTRY_IMAGE/${TEST_NAME}-ryu:${IMAGE_TAG}" -f ./src/tests/${TEST_NAME}/Ryu.Dockerfile .
+    - docker push "$CI_REGISTRY_IMAGE/${TEST_NAME}-ryu:${IMAGE_TAG}"
+
+    # Build Mininet container
+    - docker buildx build -t "$CI_REGISTRY_IMAGE/${TEST_NAME}-mininet:${IMAGE_TAG}" -f ./src/tests/${TEST_NAME}/mininet/Mininet.Dockerfile .
+    - docker push "$CI_REGISTRY_IMAGE/${TEST_NAME}-mininet:${IMAGE_TAG}"
+
+    # Build test container
+    - docker buildx build -t "$CI_REGISTRY_IMAGE/${TEST_NAME}-test:${IMAGE_TAG}" -f ./src/tests/${TEST_NAME}/Test.Dockerfile .
+    - docker push "$CI_REGISTRY_IMAGE/${TEST_NAME}-test:${IMAGE_TAG}"
+  after_script:
+    - docker image prune --force
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH)'
+    #- if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "develop"'
+    - changes:
+      - src/common/**/*.py
+      - proto/*.proto
+      - src/tests/${TEST_NAME}/**/*.{py,in,sh,yml}
+      - src/tests/${TEST_NAME}/*.Dockerfile
+      - .gitlab-ci.yml
+
+# Deploy TeraFlowSDN and Execute end-2-end test
+end2end_test ryu-openflow:
+  timeout: 45m
+  variables:
+    TEST_NAME: 'ryu-openflow'
+    IMAGE_TAG: 'mr$CI_MERGE_REQUEST_IID'
+  stage: end2end_test
+  # Disable to force running it after all other tasks
+  #needs:
+  #  - build ryu-openflow
+  before_script:
+    # Do Docker cleanup
+    - docker ps --all --quiet | xargs --no-run-if-empty docker stop
+    - docker container prune --force
+    - docker ps --all --quiet | xargs --no-run-if-empty docker rm --force
+    - docker image prune --force
+    - docker network prune --force
+    - docker volume prune --all --force
+    - docker buildx prune --force
+
+    # Check MicroK8s is ready
+    - microk8s status --wait-ready
+    - LOOP_MAX_ATTEMPTS=10
+    - LOOP_COUNTER=0
+    - >
+      while ! kubectl get pods --all-namespaces &> /dev/null; do
+        printf "%c" "."
+        sleep 1
+        LOOP_COUNTER=$((LOOP_COUNTER + 1))
+        if [ "$LOOP_COUNTER" -ge "$LOOP_MAX_ATTEMPTS" ]; then
+          echo "Max attempts reached, exiting the loop."
+          exit 1
+        fi
+      done
+    - kubectl get pods --all-namespaces
+
+    # Always delete Kubernetes namespaces
+    - export K8S_NAMESPACES=$(kubectl get namespace -o jsonpath='{.items[*].metadata.name}')
+    - echo "K8S_NAMESPACES=${K8S_NAMESPACES}"
+
+    - export OLD_NATS_NAMESPACES=$(echo "${K8S_NAMESPACES}" | tr ' ' '\n' | grep -E '^nats')
+    - echo "OLD_NATS_NAMESPACES=${OLD_NATS_NAMESPACES}"
+    - >
+      for ns in ${OLD_NATS_NAMESPACES}; do
+        if [[ "$ns" == nats* ]]; then
+          if helm3 status "$ns" &>/dev/null; then
+            helm3 uninstall "$ns" -n "$ns"
+          else
+            echo "Release '$ns' not found, skipping..."
+          fi
+        fi
+      done
+    - export OLD_NAMESPACES=$(echo "${K8S_NAMESPACES}" | tr ' ' '\n' | grep -E '^(tfs|crdb|qdb|kafka|nats)')
+    - echo "OLD_NAMESPACES=${OLD_NAMESPACES}"
+    - kubectl delete namespace ${OLD_NAMESPACES} || true
+
+    # Clean-up Kubernetes Failed pods
+    - >
+      kubectl get pods --all-namespaces --no-headers --field-selector=status.phase=Failed
+      -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name |
+      xargs --no-run-if-empty --max-args=2 kubectl delete pod --namespace
+
+    # Login Docker repository
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+
+  script:
+    # Download Docker images to run the test
+    - docker pull "${CI_REGISTRY_IMAGE}/${TEST_NAME}-ryu:${IMAGE_TAG}"
+    - docker pull "${CI_REGISTRY_IMAGE}/${TEST_NAME}-mininet:${IMAGE_TAG}"
+    - docker pull "${CI_REGISTRY_IMAGE}/${TEST_NAME}-test:${IMAGE_TAG}"
+
+    # Check MicroK8s is ready
+    - microk8s status --wait-ready
+    - LOOP_MAX_ATTEMPTS=10
+    - LOOP_COUNTER=0
+    - >
+      while ! kubectl get pods --all-namespaces &> /dev/null; do
+        printf "%c" "."
+        sleep 1
+        LOOP_COUNTER=$((LOOP_COUNTER + 1))
+        if [ "$LOOP_COUNTER" -ge "$LOOP_MAX_ATTEMPTS" ]; then
+          echo "Max attempts reached, exiting the loop."
+          exit 1
+        fi
+      done
+    - kubectl get pods --all-namespaces
+
+    # Deploy Docker network
+    - >
+      docker network create --driver bridge --subnet=172.254.252.0/24 --gateway=172.254.252.254
+      --ip-range=172.254.252.0/24 ryu-of-br
+
+    # Deploy Ryu
+    - >
+      docker run --detach --name ryu --network ryu-of-br --ip 172.254.252.10 --publish 8080
+      "${CI_REGISTRY_IMAGE}/${TEST_NAME}-ryu:${IMAGE_TAG}"
+
+    # Wait for Ryu to get initialized
+    - sleep 3
+    - docker ps -a
+#    - docker logs ryu
+    - LOOP_MAX_ATTEMPTS=180
+    - LOOP_COUNTER=0
+    - echo "Waiting for Ryu to be ready..."
+    - >
+      until curl -s 'http://172.254.252.10:8080/'; do
+        echo "Attempt: $LOOP_COUNTER"
+        sleep 5;
+        LOOP_COUNTER=$((LOOP_COUNTER + 1))
+        if [ "$LOOP_COUNTER" -ge "$LOOP_MAX_ATTEMPTS" ]; then
+          echo "Max attempts reached, exiting the loop."
+          break
+        fi
+      done
+    - echo "Ryu is ready!"
+#    - docker logs ryu
+
+    # Deploy Mininet
+    #  --ulimit memlock=-1:-1 --ulimit nofile=65536:65536 --ulimit nproc=65536:65536
+    - >
+      docker run --detach --name mininet --network ryu-of-br --ip 172.254.252.11 --publish 5000
+      --privileged --volume /lib/modules:/lib/modules
+      "${CI_REGISTRY_IMAGE}/${TEST_NAME}-mininet:${IMAGE_TAG}"
+
+    # Wait for initialization of Mininet
+    - sleep 10
+    - docker ps -a
+#    - docker logs mininet
+    - LOOP_MAX_ATTEMPTS=180
+    - LOOP_COUNTER=0
+    - echo "Waiting for Mininet to be ready..."
+    - >
+      until docker logs mininet 2>&1 | grep -q 'Enabling remote OVSDB managers'; do
+        echo "Attempt: $LOOP_COUNTER"
+        docker logs mininet 2>&1;
+        sleep 1;
+        LOOP_COUNTER=$((LOOP_COUNTER + 1))
+        if [ "$LOOP_COUNTER" -ge "$LOOP_MAX_ATTEMPTS" ]; then
+          echo "Max attempts reached, exiting the loop."
+          break
+        fi
+      done
+    - echo "Mininet is ready!"
+#    - docker logs mininet
+
+    # Wait for initialization of OVS switches
+    - >
+      while true; do
+        echo "Attempt: $LOOP_COUNTER"
+        echo "Waiting for OVS bridges s1-s5..."
+        sleep 1;
+        OVS_OUTPUT="$(docker exec mininet bash -c "ovs-vsctl show")"
+        if echo "$OVS_OUTPUT" | grep -q "Bridge s1" &&
+           echo "$OVS_OUTPUT" | grep -q "Bridge s2" &&
+           echo "$OVS_OUTPUT" | grep -q "Bridge s3" &&
+           echo "$OVS_OUTPUT" | grep -q "Bridge s4" &&
+           echo "$OVS_OUTPUT" | grep -q "Bridge s5"; then
+          echo "All OVS bridges are ready!"
+          break
+        fi
+        LOOP_COUNTER=$((LOOP_COUNTER + 1))
+        if [ "$LOOP_COUNTER" -ge "$LOOP_MAX_ATTEMPTS" ]; then
+          echo "Max attempts reached, exiting the loop."
+          break
+        fi
+      done
+
+    # Dump configuration of the switches (OpenFlow rules configured) (after starting Mininet)
+    - docker exec mininet bash -c "ovs-vsctl show"
+    - docker exec mininet bash -c "ovs-ofctl dump-flows s1"
+    - docker exec mininet bash -c "ovs-ofctl dump-flows s2"
+    - docker exec mininet bash -c "ovs-ofctl dump-flows s3"
+    - docker exec mininet bash -c "ovs-ofctl dump-flows s4"
+    - docker exec mininet bash -c "ovs-ofctl dump-flows s5"
+
+    # Configure TeraFlowSDN deployment
+    # Uncomment if DEBUG log level is needed for the components
+    #- yq -i '((select(.kind=="Deployment").spec.template.spec.containers.[] | select(.name=="server").env.[]) | select(.name=="LOG_LEVEL").value) |= "DEBUG"' manifests/contextservice.yaml
+    #- yq -i '((select(.kind=="Deployment").spec.template.spec.containers.[] | select(.name=="server").env.[]) | select(.name=="LOG_LEVEL").value) |= "DEBUG"' manifests/deviceservice.yaml
+    #- yq -i '((select(.kind=="Deployment").spec.template.spec.containers.[] | select(.name=="frontend").env.[]) | select(.name=="LOG_LEVEL").value) |= "DEBUG"' manifests/pathcompservice.yaml
+    #- yq -i '((select(.kind=="Deployment").spec.template.spec.containers.[] | select(.name=="server").env.[]) | select(.name=="LOG_LEVEL").value) |= "DEBUG"' manifests/serviceservice.yaml
+    #- yq -i '((select(.kind=="Deployment").spec.template.spec.containers.[] | select(.name=="server").env.[]) | select(.name=="LOG_LEVEL").value) |= "DEBUG"' manifests/nbiservice.yaml
+
+    - source src/tests/${TEST_NAME}/deploy_specs.sh
+    #- export TFS_REGISTRY_IMAGES="${CI_REGISTRY_IMAGE}"
+    #- export TFS_SKIP_BUILD="YES"
+    #- export TFS_IMAGE_TAG="latest"
+    #- echo "TFS_REGISTRY_IMAGES=${CI_REGISTRY_IMAGE}"
+
+    # Deploy TeraFlowSDN
+    - ./deploy/crdb.sh
+    - ./deploy/nats.sh
+    - ./deploy/kafka.sh
+    #- ./deploy/qdb.sh
+    - ./deploy/tfs.sh
+    - ./deploy/show.sh
+
+    ## Wait for Context to be subscribed to NATS
+    ## WARNING: this loop is infinite if there is no subscriber (such as monitoring).
+    ##          Investigate if we can use a counter to limit the number of iterations.
+    ##          For now, keep it commented out.
+    #- LOOP_MAX_ATTEMPTS=180
+    #- LOOP_COUNTER=0
+    #- >
+    #  while ! kubectl --namespace $TFS_K8S_NAMESPACE logs deployment/contextservice -c server 2>&1 | grep -q 'Subscriber is Ready? True'; do
+    #    echo "Attempt: $LOOP_COUNTER"
+    #    kubectl --namespace $TFS_K8S_NAMESPACE logs deployment/contextservice -c server 2>&1;
+    #    sleep 1;
+    #    LOOP_COUNTER=$((LOOP_COUNTER + 1))
+    #    if [ "$LOOP_COUNTER" -ge "$LOOP_MAX_ATTEMPTS" ]; then
+    #      echo "Max attempts reached, exiting the loop."
+    #      break
+    #    fi
+    #  done
+    #- kubectl --namespace $TFS_K8S_NAMESPACE logs deployment/contextservice -c server
+
+    # Run end-to-end test: onboard scenario
+    - >
+      docker run -t --rm --name ${TEST_NAME} --network=host 
+      --volume "$PWD/tfs_runtime_env_vars.sh:/var/teraflow/tfs_runtime_env_vars.sh"
+      --volume "$PWD/src/tests/${TEST_NAME}:/opt/results"
+      "${CI_REGISTRY_IMAGE}/${TEST_NAME}-test:${IMAGE_TAG}" /var/teraflow/run-onboarding.sh
+
+    # Dump configuration of the switches (OpenFlow rules configured) (before configure IETF L3VPN services)
+    - docker exec mininet bash -c "ovs-vsctl show"
+    - docker exec mininet ovs-ofctl dump-flows s1
+    - docker exec mininet ovs-ofctl dump-flows s2
+    - docker exec mininet ovs-ofctl dump-flows s3
+    - docker exec mininet ovs-ofctl dump-flows s4
+    - docker exec mininet ovs-ofctl dump-flows s5
+
+    - |
+      ping_check() {
+        local src=$1 dst=$2 pattern=$3
+        local output
+        output=$(curl -s "http://172.254.252.11:5000/ping?source=${src}&target=${dst}&count=3")
+        echo "$output"
+        if echo "$output" | grep -E "$pattern" >/dev/null; then
+          echo "PASSED ${src}->${dst}
+        else
+          echo "FAILED ${src}->${dst}
+        fi
+        echo "$output" | grep -E "$pattern"
+      }
+
+    # Run end-to-end test: test no connectivity with ping
+    - ping_check h1 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h1 h3 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h1 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h3 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h3 '3 packets transmitted, 0 received, 100% packet loss'
+
+    # Run end-to-end test: configure IETF L3VPN service between h1-h3
+    - >
+      docker run -t --rm --name ${TEST_NAME} --network=host 
+      --volume "$PWD/tfs_runtime_env_vars.sh:/var/teraflow/tfs_runtime_env_vars.sh"
+      --volume "$PWD/src/tests/${TEST_NAME}:/opt/results"
+      "${CI_REGISTRY_IMAGE}/${TEST_NAME}-test:${IMAGE_TAG}" /var/teraflow/run-service-ietf-create-h1-h3.sh
+
+    # Dump configuration of the switches (OpenFlow rules configured) (after configure IETF L3VPN service between h1-h3)
+    - docker exec mininet bash -c "ovs-vsctl show"
+    - docker exec mininet ovs-ofctl dump-flows s1
+    - docker exec mininet ovs-ofctl dump-flows s2
+    - docker exec mininet ovs-ofctl dump-flows s3
+    - docker exec mininet ovs-ofctl dump-flows s4
+    - docker exec mininet ovs-ofctl dump-flows s5
+
+    # Run end-to-end test: test connectivity with ping (h1-h3 should work, rest should not work)
+    - ping_check h1 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h1 h3 '3 packets transmitted, 3 received, 0% packet loss'
+    - ping_check h1 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h3 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h1 '3 packets transmitted, 3 received, 0% packet loss'
+    - ping_check h3 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h3 '3 packets transmitted, 0 received, 100% packet loss'
+
+    # Run end-to-end test: configure IETF L3VPN service between h2-h4
+    - >
+      docker run -t --rm --name ${TEST_NAME} --network=host 
+      --volume "$PWD/tfs_runtime_env_vars.sh:/var/teraflow/tfs_runtime_env_vars.sh"
+      --volume "$PWD/src/tests/${TEST_NAME}:/opt/results"
+      "${CI_REGISTRY_IMAGE}/${TEST_NAME}-test:${IMAGE_TAG}" /var/teraflow/run-service-ietf-create-h2-h4.sh
+
+    # Dump configuration of the switches (OpenFlow rules configured) (after configure IETF L3VPN service between h2-h4)
+    - docker exec mininet bash -c "ovs-vsctl show"
+    - docker exec mininet ovs-ofctl dump-flows s1
+    - docker exec mininet ovs-ofctl dump-flows s2
+    - docker exec mininet ovs-ofctl dump-flows s3
+    - docker exec mininet ovs-ofctl dump-flows s4
+    - docker exec mininet ovs-ofctl dump-flows s5
+
+    # Run end-to-end test: test connectivity with ping (h1-h3 should work, h2-h4 should work, rest should not work)
+    - ping_check h1 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h1 h3 '3 packets transmitted, 3 received, 0% packet loss'
+    - ping_check h1 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h3 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h4 '3 packets transmitted, 3 received, 0% packet loss'
+    - ping_check h3 h1 '3 packets transmitted, 3 received, 0% packet loss'
+    - ping_check h3 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h2 '3 packets transmitted, 3 received, 0% packet loss'
+    - ping_check h4 h3 '3 packets transmitted, 0 received, 100% packet loss'
+
+    # Run end-to-end test: deconfigure IETF L3VPN service h1-h3
+    - >
+      docker run -t --rm --name ${TEST_NAME} --network=host 
+      --volume "$PWD/tfs_runtime_env_vars.sh:/var/teraflow/tfs_runtime_env_vars.sh"
+      --volume "$PWD/src/tests/${TEST_NAME}:/opt/results"
+      "${CI_REGISTRY_IMAGE}/${TEST_NAME}-test:${IMAGE_TAG}" /var/teraflow/run-service-ietf-remove-h1-h3.sh
+
+    # Dump configuration of the switches (OpenFlow rules configured) (after deconfigure IETF L3VPN service between h1-h3)
+    - docker exec mininet bash -c "ovs-vsctl show"
+    - docker exec mininet ovs-ofctl dump-flows s1
+    - docker exec mininet ovs-ofctl dump-flows s2
+    - docker exec mininet ovs-ofctl dump-flows s3
+    - docker exec mininet ovs-ofctl dump-flows s4
+    - docker exec mininet ovs-ofctl dump-flows s5
+
+    # Run end-to-end test: test connectivity with ping (h2-h4 should work, rest should not work)
+    - ping_check h1 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h1 h3 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h1 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h3 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h4 '3 packets transmitted, 3 received, 0% packet loss'
+    - ping_check h3 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h2 '3 packets transmitted, 3 received, 0% packet loss'
+    - ping_check h4 h3 '3 packets transmitted, 0 received, 100% packet loss'
+
+    # Run end-to-end test: deconfigure IETF L3VPN service h2-h4
+    - >
+      docker run -t --rm --name ${TEST_NAME} --network=host 
+      --volume "$PWD/tfs_runtime_env_vars.sh:/var/teraflow/tfs_runtime_env_vars.sh"
+      --volume "$PWD/src/tests/${TEST_NAME}:/opt/results"
+      "${CI_REGISTRY_IMAGE}/${TEST_NAME}-test:${IMAGE_TAG}" /var/teraflow/run-service-ietf-remove-h2-h4.sh
+
+    # Dump configuration of the switches (OpenFlow rules configured) (after deconfigure IETF L3VPN service between h2-h4)
+    - docker exec mininet bash -c "ovs-vsctl show"
+    - docker exec mininet ovs-ofctl dump-flows s1
+    - docker exec mininet ovs-ofctl dump-flows s2
+    - docker exec mininet ovs-ofctl dump-flows s3
+    - docker exec mininet ovs-ofctl dump-flows s4
+    - docker exec mininet ovs-ofctl dump-flows s5
+
+    # Run end-to-end test: test no connectivity with ping
+    - ping_check h1 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h1 h3 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h1 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h3 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h2 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h3 h4 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h1 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h2 '3 packets transmitted, 0 received, 100% packet loss'
+    - ping_check h4 h3 '3 packets transmitted, 0 received, 100% packet loss'
+
+    # Run end-to-end test: cleanup scenario
+    - >
+      docker run -t --rm --name ${TEST_NAME} --network=host 
+      --volume "$PWD/tfs_runtime_env_vars.sh:/var/teraflow/tfs_runtime_env_vars.sh"
+      --volume "$PWD/src/tests/${TEST_NAME}:/opt/results"
+      "${CI_REGISTRY_IMAGE}/${TEST_NAME}-test:${IMAGE_TAG}" /var/teraflow/run-cleanup.sh
+
+  after_script:
+    # Dump configuration of the switches (OpenFlow rules configured) (on after_script)
+    - docker exec mininet bash -c "ovs-vsctl show" || true
+    - docker exec mininet ovs-ofctl dump-flows s1 || true
+    - docker exec mininet ovs-ofctl dump-flows s2 || true
+    - docker exec mininet ovs-ofctl dump-flows s3 || true
+    - docker exec mininet ovs-ofctl dump-flows s4 || true
+    - docker exec mininet ovs-ofctl dump-flows s5 || true
+
+    # Dump Ryu and Mininet logs (on after_script)
+    - docker ps -a
+    #- docker logs mininet
+    - docker logs ryu
+
+    # Dump TeraFlowSDN component logs
+    - source src/tests/${TEST_NAME}/deploy_specs.sh
+    - kubectl --namespace $TFS_K8S_NAMESPACE logs deployment/contextservice -c server || true
+    - kubectl --namespace $TFS_K8S_NAMESPACE logs deployment/deviceservice -c server || true
+    - kubectl --namespace $TFS_K8S_NAMESPACE logs deployment/pathcompservice -c frontend || true
+    - kubectl --namespace $TFS_K8S_NAMESPACE logs deployment/serviceservice -c server || true
+    - kubectl --namespace $TFS_K8S_NAMESPACE logs deployment/nbiservice -c server || true
+
+    # Clean up
+    - kubectl delete namespaces tfs || true
+    - docker ps --all --quiet | xargs --no-run-if-empty docker stop
+    - docker container prune --force
+    - docker ps --all --quiet | xargs --no-run-if-empty docker rm --force
+    - docker network prune --force
+    - docker volume prune --all --force
+    - docker image prune --force
+
+  #coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH)'
+    #- if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "develop"'
+  artifacts:
+      when: always
+      reports:
+        junit: ./src/tests/${TEST_NAME}/report_*.xml

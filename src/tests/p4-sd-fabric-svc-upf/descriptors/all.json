@@ -1,0 +1,134 @@
+{
+    "contexts": [
+        {"context_id": {"context_uuid": {"uuid": "admin"}}}
+    ],
+    "topologies": [
+        {"topology_id": {"context_id": {"context_uuid": {"uuid": "admin"}}, "topology_uuid": {"uuid": "admin"}}
+        }
+    ],
+    "devices": [
+        {
+            "device_id": {"device_uuid": {"uuid": "tfs-sdn-controller"}},
+            "name": "tfs-sdn-controller",
+            "device_type": "teraflowsdn",
+            "device_drivers": ["DEVICEDRIVER_UNDEFINED"],
+            "device_operational_status": "DEVICEOPERATIONALSTATUS_UNDEFINED",
+            "device_config": {"config_rules": [
+                {"action": 1, "custom": {"resource_key": "_connect/address", "resource_value": "127.0.0.1"}},
+                {"action": 1, "custom": {"resource_key": "_connect/port", "resource_value": "0"}},
+                {"action": 1, "custom": {"resource_key": "_connect/settings", "resource_value": {
+                    "endpoints": [{"uuid": "mgmt", "name": "mgmt", "type": "mgmt-int"}]
+                }}}
+            ]}
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "5gc"}},
+            "device_type": "oran-cn",
+            "device_drivers": ["DEVICEDRIVER_UNDEFINED"],
+            "device_config": {
+                "config_rules": [
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "127.0.0.1"}},
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "0"}},
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {
+                        "endpoints": [{"uuid": "mgmt", "name": "mgmt", "type": "mgmt-int"}]
+                    }}}
+                ]
+            }
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "5g-gNb"}},
+            "device_type": "emu-packet-radio-router",
+            "device_drivers": ["DEVICEDRIVER_UNDEFINED"],
+            "device_config": {
+                "config_rules": [
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "127.0.0.1"}},
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "0"}},
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {
+                        "endpoints": [{"uuid": "eth1", "name": "eth1", "type": "copper"}]
+                    }}}
+                ]
+            }
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}},
+            "device_type": "p4-switch",
+            "device_drivers": ["DEVICEDRIVER_P4"],
+            "device_operational_status": "DEVICEOPERATIONALSTATUS_DISABLED",
+            "name": "sw1-5g-upf",
+            "device_config": {
+                "config_rules": [
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "192.168.7.56"}},
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "50001"}},
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {
+                        "id": 1,
+                        "name": "sw1-5g-upf",
+                        "vendor": "Open Networking Foundation",
+                        "hw_ver": "BMv2 simple_switch",
+                        "sw_ver": "Stratum",
+                        "timeout": 60,
+                        "p4bin": "/root/p4/bmv2.json",
+                        "p4info": "/root/p4/p4info.txt",
+                        "endpoints": [
+                            {"uuid": "sw1-1", "name": "1", "type": "port-dp-net-access"},
+                            {"uuid": "sw1-2", "name": "2", "type": "port-dp-net-core"},
+                            {"uuid": "sw1-3", "name": "3", "type": "port-cp-5gc"},
+                            {"uuid": "sw1-4", "name": "4", "type": "port-cp-sdn"}
+                        ]
+                    }}}
+                ]
+            }
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "data-network"}},
+            "device_type": "network",
+            "device_drivers": ["DEVICEDRIVER_UNDEFINED"],
+            "device_config": {
+                "config_rules": [
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "127.0.0.1"}},
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "0"}},
+                    {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {
+                        "endpoints": [{"uuid": "eth1", "name": "eth1", "type": "copper"}]
+                    }}}
+                ]
+            }
+        }
+    ],
+    "links": [
+        {
+            "link_id": {"link_uuid": {"uuid": "5g-gNb/eth1==sw1-5g-upf/sw1-1"}}, "link_type": "LINKTYPE_COPPER", "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "5g-gNb"}},       "endpoint_uuid": {"uuid": "eth1"}},
+                {"device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}},   "endpoint_uuid": {"uuid": "sw1-1"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "sw1-5g-upf/sw1-1==5g-gNb/eth1"}}, "link_type": "LINKTYPE_COPPER", "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}},   "endpoint_uuid": {"uuid": "sw1-1"}},
+                {"device_id": {"device_uuid": {"uuid": "5g-gNb"}},       "endpoint_uuid": {"uuid": "eth1"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "sw1-5g-upf/sw1-2==data-network/eth1"}}, "link_type": "LINKTYPE_COPPER", "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}},   "endpoint_uuid": {"uuid": "sw1-2"}},
+                {"device_id": {"device_uuid": {"uuid": "data-network"}}, "endpoint_uuid": {"uuid": "eth1"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "data-network/eth1==sw1-5g-upf/sw1-2"}}, "link_type": "LINKTYPE_COPPER", "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "data-network"}}, "endpoint_uuid": {"uuid": "eth1"}},
+                {"device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}},   "endpoint_uuid": {"uuid": "sw1-2"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "sw1-5g-upf/sw1-3==5gc/mgmt"}}, "link_type": "LINKTYPE_MANAGEMENT", "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}}, "endpoint_uuid": {"uuid": "sw1-3"}},
+                {"device_id": {"device_uuid": {"uuid": "5gc"}},        "endpoint_uuid": {"uuid": "mgmt"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "sw1-5g-upf/sw1-4==tfs-sdn-controller/mgmt"}}, "link_type": "LINKTYPE_MANAGEMENT", "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}},         "endpoint_uuid": {"uuid": "sw1-4"}},
+                {"device_id": {"device_uuid": {"uuid": "tfs-sdn-controller"}}, "endpoint_uuid": {"uuid": "mgmt"}}
+            ]
+        }
+    ]
+}

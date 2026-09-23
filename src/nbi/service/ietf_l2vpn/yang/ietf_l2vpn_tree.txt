@@ -1,0 +1,383 @@
+module: ietf-l2vpn-svc
+  +--rw l2vpn-svc
+     +--rw vpn-profiles
+     |  +--rw valid-provider-identifiers
+     |     +--rw cloud-identifier*            string {cloud-access}?
+     |     +--rw qos-profile-identifier*      string
+     |     +--rw bfd-profile-identifier*      string
+     |     +--rw remote-carrier-identifier*   string
+     +--rw vpn-services
+     |  +--rw vpn-service* [vpn-id]
+     |     +--rw vpn-id                      svc-id
+     |     +--rw vpn-svc-type?               identityref
+     |     +--rw customer-name?              string
+     |     +--rw svc-topo?                   identityref
+     |     +--rw cloud-accesses {cloud-access}?
+     |     |  +--rw cloud-access* [cloud-identifier]
+     |     |     +--rw cloud-identifier     -> /l2vpn-svc/vpn-profiles/valid-provider-identifiers/cloud-identifier
+     |     |     +--rw (list-flavor)?
+     |     |        +--:(permit-any)
+     |     |        |  +--rw permit-any?    empty
+     |     |        +--:(deny-any-except)
+     |     |        |  +--rw permit-site*   -> /l2vpn-svc/sites/site/site-id
+     |     |        +--:(permit-any-except)
+     |     |           +--rw deny-site*     -> /l2vpn-svc/sites/site/site-id
+     |     +--rw frame-delivery {bum}?
+     |     |  +--rw customer-tree-flavors
+     |     |  |  +--rw tree-flavor*   identityref
+     |     |  +--rw bum-deliveries
+     |     |  |  +--rw bum-delivery* [frame-type]
+     |     |  |     +--rw frame-type       identityref
+     |     |  |     +--rw delivery-mode?   identityref
+     |     |  +--rw multicast-gp-port-mapping    identityref
+     |     +--rw extranet-vpns {extranet-vpn}?
+     |     |  +--rw extranet-vpn* [vpn-id]
+     |     |     +--rw vpn-id              svc-id
+     |     |     +--rw local-sites-role?   identityref
+     |     +--rw ce-vlan-preservation        boolean
+     |     +--rw ce-vlan-cos-preservation    boolean
+     |     +--rw carrierscarrier?            boolean {carrierscarrier}?
+     +--rw sites
+        +--rw site* [site-id]
+           +--rw site-id                                string
+           +--rw site-vpn-flavor?                       identityref
+           +--rw devices
+           |  +--rw device* [device-id]
+           |     +--rw device-id     string
+           |     +--rw location      -> ../../../locations/location/location-id
+           |     +--rw management
+           |        +--rw transport?   identityref
+           |        +--rw address?     inet:ip-address
+           +--rw management
+           |  +--rw type    identityref
+           +--rw locations
+           |  +--rw location* [location-id]
+           |     +--rw location-id     string
+           |     +--rw address?        string
+           |     +--rw postal-code?    string
+           |     +--rw state?          string
+           |     +--rw city?           string
+           |     +--rw country-code?   string
+           +--rw site-diversity {site-diversity}?
+           |  +--rw groups
+           |     +--rw group* [group-id]
+           |        +--rw group-id    string
+           +--rw vpn-policies
+           |  +--rw vpn-policy* [vpn-policy-id]
+           |     +--rw vpn-policy-id    string
+           |     +--rw entries* [id]
+           |        +--rw id         string
+           |        +--rw filters
+           |        |  +--rw filter* [type]
+           |        |     +--rw type       identityref
+           |        |     +--rw lan-tag*   uint32 {lan-tag}?
+           |        +--rw vpn* [vpn-id]
+           |           +--rw vpn-id       -> /l2vpn-svc/vpn-services/vpn-service/vpn-id
+           |           +--rw site-role?   identityref
+           +--rw service
+           |  +--rw qos {qos}?
+           |  |  +--rw qos-classification-policy
+           |  |  |  +--rw rule* [id]
+           |  |  |     +--rw id                         string
+           |  |  |     +--rw (match-type)?
+           |  |  |     |  +--:(match-flow)
+           |  |  |     |  |  +--rw match-flow
+           |  |  |     |  |     +--rw dscp?           inet:dscp
+           |  |  |     |  |     +--rw dot1q?          uint16
+           |  |  |     |  |     +--rw pcp?            uint8
+           |  |  |     |  |     +--rw src-mac?        yang:mac-address
+           |  |  |     |  |     +--rw dst-mac?        yang:mac-address
+           |  |  |     |  |     +--rw color-type?     identityref
+           |  |  |     |  |     +--rw target-sites*   svc-id {target-sites}?
+           |  |  |     |  |     +--rw any?            empty
+           |  |  |     |  |     +--rw vpn-id?         svc-id
+           |  |  |     |  +--:(match-application)
+           |  |  |     |     +--rw match-application?   identityref
+           |  |  |     +--rw target-class-id?           string
+           |  |  +--rw qos-profile
+           |  |     +--rw (qos-profile)?
+           |  |        +--:(standard)
+           |  |        |  +--rw profile?   -> /l2vpn-svc/vpn-profiles/valid-provider-identifiers/qos-profile-identifier
+           |  |        +--:(custom)
+           |  |           +--rw classes {qos-custom}?
+           |  |              +--rw class* [class-id]
+           |  |                 +--rw class-id        string
+           |  |                 +--rw direction?      identityref
+           |  |                 +--rw policing?       identityref
+           |  |                 +--rw byte-offset?    uint16
+           |  |                 +--rw frame-delay
+           |  |                 |  +--rw (flavor)?
+           |  |                 |     +--:(lowest)
+           |  |                 |     |  +--rw use-lowest-latency?   empty
+           |  |                 |     +--:(boundary)
+           |  |                 |        +--rw delay-bound?          uint16
+           |  |                 +--rw frame-jitter
+           |  |                 |  +--rw (flavor)?
+           |  |                 |     +--:(lowest)
+           |  |                 |     |  +--rw use-lowest-jitter?   empty
+           |  |                 |     +--:(boundary)
+           |  |                 |        +--rw delay-bound?         uint32
+           |  |                 +--rw frame-loss
+           |  |                 |  +--rw rate?   decimal64
+           |  |                 +--rw bandwidth
+           |  |                    +--rw guaranteed-bw-percent    decimal64
+           |  |                    +--rw end-to-end?              empty
+           |  +--rw carrierscarrier {carrierscarrier}?
+           |     +--rw signaling-type?   identityref
+           +--rw broadcast-unknown-unicast-multicast {bum}?
+           |  +--rw multicast-site-type?            enumeration
+           |  +--rw multicast-gp-address-mapping* [id]
+           |  |  +--rw id                 uint16
+           |  |  +--rw vlan-id            uint16
+           |  |  +--rw mac-gp-address     yang:mac-address
+           |  |  +--rw port-lag-number?   uint32
+           |  +--rw bum-overall-rate?               uint64
+           |  +--rw bum-rate-per-type* [type]
+           |     +--rw type    identityref
+           |     +--rw rate?   uint64
+           +--rw mac-loop-prevention {mac-loop-prevention}?
+           |  +--rw protection-type?   identityref
+           |  +--rw frequency?         uint32
+           |  +--rw retry-timer?       uint32
+           +--rw access-control-list {acl}?
+           |  +--rw mac* [mac-address]
+           |     +--rw mac-address    yang:mac-address
+           +--ro actual-site-start?                     yang:date-and-time
+           +--ro actual-site-stop?                      yang:date-and-time
+           +--rw bundling-type?                         identityref
+           +--rw default-ce-vlan-id                     uint32
+           +--rw site-network-accesses
+              +--rw site-network-access* [network-access-id]
+                 +--rw network-access-id                      string
+                 +--rw remote-carrier-name?                   -> /l2vpn-svc/vpn-profiles/valid-provider-identifiers/remote-carrier-identifier
+                 +--rw type?                                  identityref
+                 +--rw (location-flavor)
+                 |  +--:(location)
+                 |  |  +--rw location-reference?              -> ../../../locations/location/location-id
+                 |  +--:(device)
+                 |     +--rw device-reference?                -> ../../../devices/device/device-id
+                 +--rw access-diversity {site-diversity}?
+                 |  +--rw groups
+                 |  |  +--rw group* [group-id]
+                 |  |     +--rw group-id    string
+                 |  +--rw constraints
+                 |     +--rw constraint* [constraint-type]
+                 |        +--rw constraint-type    identityref
+                 |        +--rw target
+                 |           +--rw (target-flavor)?
+                 |              +--:(id)
+                 |              |  +--rw group* [group-id]
+                 |              |     +--rw group-id    string
+                 |              +--:(all-accesses)
+                 |              |  +--rw all-other-accesses?   empty
+                 |              +--:(all-groups)
+                 |                 +--rw all-other-groups?     empty
+                 +--rw bearer
+                 |  +--rw requested-type {requested-type}?
+                 |  |  +--rw type?     string
+                 |  |  +--rw strict?   boolean
+                 |  +--rw always-on?          boolean {always-on}?
+                 |  +--rw bearer-reference?   string {bearer-reference}?
+                 +--rw connection
+                 |  +--rw encapsulation-type?    identityref
+                 |  +--rw eth-inf-type?          identityref
+                 |  +--rw tagged-interface
+                 |  |  +--rw type?                identityref
+                 |  |  +--rw dot1q-vlan-tagged {dot1q}?
+                 |  |  |  +--rw tg-type?    identityref
+                 |  |  |  +--rw cvlan-id    uint16
+                 |  |  +--rw priority-tagged
+                 |  |  |  +--rw tag-type?   identityref
+                 |  |  +--rw qinq {qinq}?
+                 |  |  |  +--rw tag-type?   identityref
+                 |  |  |  +--rw svlan-id    uint16
+                 |  |  |  +--rw cvlan-id    uint16
+                 |  |  +--rw qinany {qinany}?
+                 |  |  |  +--rw tag-type?   identityref
+                 |  |  |  +--rw svlan-id    uint16
+                 |  |  +--rw vxlan {vxlan}?
+                 |  |     +--rw vni-id       uint32
+                 |  |     +--rw peer-mode?   identityref
+                 |  |     +--rw peer-list* [peer-ip]
+                 |  |        +--rw peer-ip    inet:ip-address
+                 |  +--rw untagged-interface
+                 |  |  +--rw speed?                 uint32
+                 |  |  +--rw mode?                  neg-mode
+                 |  |  +--rw phy-mtu?               uint32
+                 |  |  +--rw lldp?                  boolean
+                 |  |  +--rw oam-802.3ah-link {oam-3ah}?
+                 |  |  |  +--rw enabled?   boolean
+                 |  |  +--rw uni-loop-prevention?   boolean
+                 |  +--rw lag-interfaces {lag-interface}?
+                 |  |  +--rw lag-interface* [index]
+                 |  |     +--rw index    string
+                 |  |     +--rw lacp {lacp}?
+                 |  |        +--rw enabled?           boolean
+                 |  |        +--rw mode?              neg-mode
+                 |  |        +--rw speed?             uint32
+                 |  |        +--rw mini-link-num?     uint32
+                 |  |        +--rw system-priority?   uint16
+                 |  |        +--rw micro-bfd {micro-bfd}?
+                 |  |        |  +--rw enabled?      enumeration
+                 |  |        |  +--rw interval?     uint32
+                 |  |        |  +--rw hold-timer?   uint32
+                 |  |        +--rw bfd {bfd}?
+                 |  |        |  +--rw enabled?              boolean
+                 |  |        |  +--rw (holdtime)?
+                 |  |        |     +--:(profile)
+                 |  |        |     |  +--rw profile-name?   -> /l2vpn-svc/vpn-profiles/valid-provider-identifiers/bfd-profile-identifier
+                 |  |        |     +--:(fixed)
+                 |  |        |        +--rw fixed-value?    uint32
+                 |  |        +--rw member-links
+                 |  |        |  +--rw member-link* [name]
+                 |  |        |     +--rw name                string
+                 |  |        |     +--rw speed?              uint32
+                 |  |        |     +--rw mode?               neg-mode
+                 |  |        |     +--rw link-mtu?           uint32
+                 |  |        |     +--rw oam-802.3ah-link {oam-3ah}?
+                 |  |        |        +--rw enabled?   boolean
+                 |  |        +--rw flow-control?      boolean
+                 |  |        +--rw lldp?              boolean
+                 |  +--rw cvlan-id-to-svc-map* [svc-id]
+                 |  |  +--rw svc-id      -> /l2vpn-svc/vpn-services/vpn-service/vpn-id
+                 |  |  +--rw cvlan-id* [vid]
+                 |  |     +--rw vid    uint16
+                 |  +--rw l2cp-control {l2cp-control}?
+                 |  |  +--rw stp-rstp-mstp?    control-mode
+                 |  |  +--rw pause?            control-mode
+                 |  |  +--rw lacp-lamp?        control-mode
+                 |  |  +--rw link-oam?         control-mode
+                 |  |  +--rw esmc?             control-mode
+                 |  |  +--rw l2cp-802.1x?      control-mode
+                 |  |  +--rw e-lmi?            control-mode
+                 |  |  +--rw lldp?             boolean
+                 |  |  +--rw ptp-peer-delay?   control-mode
+                 |  |  +--rw garp-mrp?         control-mode
+                 |  +--rw oam {ethernet-oam}?
+                 |     +--rw md-name        string
+                 |     +--rw md-level       uint16
+                 |     +--rw cfm-8021-ag* [maid] {cfm}?
+                 |     |  +--rw maid                     string
+                 |     |  +--rw mep-id?                  uint32
+                 |     |  +--rw mep-level?               uint32
+                 |     |  +--rw mep-up-down?             enumeration
+                 |     |  +--rw remote-mep-id?           uint32
+                 |     |  +--rw cos-for-cfm-pdus?        uint32
+                 |     |  +--rw ccm-interval?            uint32
+                 |     |  +--rw ccm-holdtime?            uint32
+                 |     |  +--rw alarm-priority-defect?   identityref
+                 |     |  +--rw ccm-p-bits-pri?          ccm-priority-type
+                 |     +--rw y-1731* [maid] {y-1731}?
+                 |        +--rw maid                          string
+                 |        +--rw mep-id?                       uint32
+                 |        +--rw type?                         identityref
+                 |        +--rw remote-mep-id?                uint32
+                 |        +--rw message-period?               uint32
+                 |        +--rw measurement-interval?         uint32
+                 |        +--rw cos?                          uint32
+                 |        +--rw loss-measurement?             boolean
+                 |        +--rw synthetic-loss-measurement?   boolean
+                 |        +--rw delay-measurement
+                 |        |  +--rw enable-dm?   boolean
+                 |        |  +--rw two-way?     boolean
+                 |        +--rw frame-size?                   uint32
+                 |        +--rw session-type?                 enumeration
+                 +--rw availability
+                 |  +--rw access-priority?       uint32
+                 |  +--rw (redundancy-mode)?
+                 |     +--:(single-active)
+                 |     |  +--rw single-active?   empty
+                 |     +--:(all-active)
+                 |        +--rw all-active?      empty
+                 +--rw vpn-attachment
+                 |  +--rw (attachment-flavor)
+                 |     +--:(vpn-id)
+                 |     |  +--rw vpn-id?          -> /l2vpn-svc/vpn-services/vpn-service/vpn-id
+                 |     |  +--rw site-role?       identityref
+                 |     +--:(vpn-policy-id)
+                 |        +--rw vpn-policy-id?   -> ../../../../vpn-policies/vpn-policy/vpn-policy-id
+                 +--rw service
+                 |  +--rw svc-bandwidth {input-bw}?
+                 |  |  +--rw bandwidth* [direction type]
+                 |  |     +--rw direction    identityref
+                 |  |     +--rw type         identityref
+                 |  |     +--rw cos-id?      uint8
+                 |  |     +--rw vpn-id?      svc-id
+                 |  |     +--rw cir          uint64
+                 |  |     +--rw cbs          uint64
+                 |  |     +--rw eir?         uint64
+                 |  |     +--rw ebs?         uint64
+                 |  |     +--rw pir?         uint64
+                 |  |     +--rw pbs?         uint64
+                 |  +--rw svc-mtu            uint16
+                 |  +--rw qos {qos}?
+                 |  |  +--rw qos-classification-policy
+                 |  |  |  +--rw rule* [id]
+                 |  |  |     +--rw id                         string
+                 |  |  |     +--rw (match-type)?
+                 |  |  |     |  +--:(match-flow)
+                 |  |  |     |  |  +--rw match-flow
+                 |  |  |     |  |     +--rw dscp?           inet:dscp
+                 |  |  |     |  |     +--rw dot1q?          uint16
+                 |  |  |     |  |     +--rw pcp?            uint8
+                 |  |  |     |  |     +--rw src-mac?        yang:mac-address
+                 |  |  |     |  |     +--rw dst-mac?        yang:mac-address
+                 |  |  |     |  |     +--rw color-type?     identityref
+                 |  |  |     |  |     +--rw target-sites*   svc-id {target-sites}?
+                 |  |  |     |  |     +--rw any?            empty
+                 |  |  |     |  |     +--rw vpn-id?         svc-id
+                 |  |  |     |  +--:(match-application)
+                 |  |  |     |     +--rw match-application?   identityref
+                 |  |  |     +--rw target-class-id?           string
+                 |  |  +--rw qos-profile
+                 |  |     +--rw (qos-profile)?
+                 |  |        +--:(standard)
+                 |  |        |  +--rw profile?   -> /l2vpn-svc/vpn-profiles/valid-provider-identifiers/qos-profile-identifier
+                 |  |        +--:(custom)
+                 |  |           +--rw classes {qos-custom}?
+                 |  |              +--rw class* [class-id]
+                 |  |                 +--rw class-id        string
+                 |  |                 +--rw direction?      identityref
+                 |  |                 +--rw policing?       identityref
+                 |  |                 +--rw byte-offset?    uint16
+                 |  |                 +--rw frame-delay
+                 |  |                 |  +--rw (flavor)?
+                 |  |                 |     +--:(lowest)
+                 |  |                 |     |  +--rw use-lowest-latency?   empty
+                 |  |                 |     +--:(boundary)
+                 |  |                 |        +--rw delay-bound?          uint16
+                 |  |                 +--rw frame-jitter
+                 |  |                 |  +--rw (flavor)?
+                 |  |                 |     +--:(lowest)
+                 |  |                 |     |  +--rw use-lowest-jitter?   empty
+                 |  |                 |     +--:(boundary)
+                 |  |                 |        +--rw delay-bound?         uint32
+                 |  |                 +--rw frame-loss
+                 |  |                 |  +--rw rate?   decimal64
+                 |  |                 +--rw bandwidth
+                 |  |                    +--rw guaranteed-bw-percent    decimal64
+                 |  |                    +--rw end-to-end?              empty
+                 |  +--rw carrierscarrier {carrierscarrier}?
+                 |     +--rw signaling-type?   identityref
+                 +--rw broadcast-unknown-unicast-multicast {bum}?
+                 |  +--rw multicast-site-type?            enumeration
+                 |  +--rw multicast-gp-address-mapping* [id]
+                 |  |  +--rw id                 uint16
+                 |  |  +--rw vlan-id            uint16
+                 |  |  +--rw mac-gp-address     yang:mac-address
+                 |  |  +--rw port-lag-number?   uint32
+                 |  +--rw bum-overall-rate?               uint64
+                 |  +--rw bum-rate-per-type* [type]
+                 |     +--rw type    identityref
+                 |     +--rw rate?   uint64
+                 +--rw mac-loop-prevention {mac-loop-prevention}?
+                 |  +--rw protection-type?   identityref
+                 |  +--rw frequency?         uint32
+                 |  +--rw retry-timer?       uint32
+                 +--rw access-control-list {acl}?
+                 |  +--rw mac* [mac-address]
+                 |     +--rw mac-address    yang:mac-address
+                 +--rw mac-addr-limit {mac-addr-limit}?
+                    +--rw limit-number?    uint16
+                    +--rw time-interval?   uint32
+                    +--rw action?          identityref

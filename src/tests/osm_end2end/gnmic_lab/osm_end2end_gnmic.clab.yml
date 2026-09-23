@@ -1,0 +1,92 @@
+# Copyright 2022-2026 ETSI SDG TeraFlowSDN (TFS) (https://tfs.etsi.org/)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: osm_end2end_gnmic
+
+mgmt:
+  network: mgmt-net
+  ipv4-subnet: 172.20.30.0/24
+
+topology:
+  kinds:
+    arista_ceos:
+      kind: arista_ceos
+      image: ceos:4.32.2F
+    linux:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool:latest
+
+  nodes:
+    r1:
+      kind: arista_ceos
+      mgmt-ipv4: 172.20.30.101
+      startup-config: ../clab/r1-startup.cfg
+
+    r2:
+      kind: arista_ceos
+      mgmt-ipv4: 172.20.30.102
+      startup-config: ../clab/r2-startup.cfg
+
+    r3:
+      kind: arista_ceos
+      mgmt-ipv4: 172.20.30.103
+      startup-config: ../clab/r3-startup.cfg
+
+    dc1_untagged:
+      kind: linux
+      mgmt-ipv4: 172.20.30.201
+      exec:
+        - ip link set address 00:c1:ab:00:01:0a dev eth1
+        - ip link set eth1 up
+        - ip address add 172.16.1.10/24 dev eth1
+        - ip route add 172.16.3.0/24 via 172.16.1.1
+
+    dc2_untagged:
+      kind: linux
+      mgmt-ipv4: 172.20.30.202
+      exec:
+        - ip link set address 00:c1:ab:00:02:0a dev eth1
+        - ip link set eth1 up
+        - ip address add 172.16.3.10/24 dev eth1
+        - ip route add 172.16.1.0/24 via 172.16.3.1
+
+    dc3_tagged:
+      kind: linux
+      mgmt-ipv4: 172.20.30.203
+      exec:
+        - ip link set address 00:c1:ab:00:03:0a dev eth1
+        - ip link set eth1 up
+        - ip link add link eth1 name eth1.125 type vlan id 125
+        - ip address add 172.17.1.10/24 dev eth1.125
+        - ip link set eth1.125 up
+        - ip route add 172.17.3.0/24 via 172.17.1.1
+
+    dc4_tagged:
+      kind: linux
+      mgmt-ipv4: 172.20.30.204
+      exec:
+        - ip link set address 00:c1:ab:00:04:0a dev eth1
+        - ip link set eth1 up
+        - ip link add link eth1 name eth1.125 type vlan id 125
+        - ip address add 172.17.3.10/24 dev eth1.125
+        - ip link set eth1.125 up
+        - ip route add 172.17.1.0/24 via 172.17.3.1
+
+  links:
+    - endpoints: ["r1:eth2", "r2:eth1"]
+    - endpoints: ["r2:eth3", "r3:eth2"]
+    - endpoints: ["r1:eth10", "dc1_untagged:eth1"]
+    - endpoints: ["r3:eth10", "dc2_untagged:eth1"]
+    - endpoints: ["r1:eth11", "dc3_tagged:eth1"]
+    - endpoints: ["r3:eth11", "dc4_tagged:eth1"]

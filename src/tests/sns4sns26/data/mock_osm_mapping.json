@@ -1,0 +1,4 @@
+[
+  {"service_endpoint_id": "SiteA", "device-id": "router-1", "service_mapping_info": {"bearer": {"bearer-reference": "SNS4SNS26:SiteA"}, "site-id": "A"}},
+  {"service_endpoint_id": "SiteB", "device-id": "router-3", "service_mapping_info": {"bearer": {"bearer-reference": "SNS4SNS26:SiteB"}, "site-id": "B"}}
+]

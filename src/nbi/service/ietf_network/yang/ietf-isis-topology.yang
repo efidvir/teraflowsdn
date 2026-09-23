@@ -1,0 +1,44 @@
+module ietf-isis-topology {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-isis-topology";
+  prefix isis-topology;
+
+  import ietf-network {
+    prefix nw;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  organization
+    "TeraFlowSDN";
+  contact
+    "TFS";
+  description
+    "IS-IS Topology extensions matching user requirements.";
+
+  revision 2025-02-18 {
+    description
+      "Initial revision.";
+  }
+
+  augment "/nw:networks/nw:network/nw:network-types" {
+    container isis-topology {
+      presence "Indicates IS-IS topology";
+    }
+  }
+
+  augment "/nw:networks/nw:network/nw:node" {
+    container isis-node-attributes {
+      leaf node-name {
+        type string;
+      }
+      leaf-list router-id {
+        type inet:ip-address;
+      }
+      leaf-list area-address {
+         type string;
+      }
+    }
+  }
+}

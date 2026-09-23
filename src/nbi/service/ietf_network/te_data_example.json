@@ -1,0 +1,63 @@
+{
+  "link:CISCO7102:CISCO7112": {
+    "latency": 134,
+    "max_bandwidth": "13300000000",
+    "unreserved_bandwidth": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "0"
+    ]
+  },
+  "link:Phoenix-4-Phoenix-3": {
+    "latency": 20,
+    "max_bandwidth": "12500000000",
+    "unreserved_bandwidth": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "0"
+    ]
+  },
+  "node:Phoenix-2": {
+    "isis_node_attributes": {
+      "node-name": "Phoenix-2",
+      "router-id": [
+        "1.1.1.1"
+      ],
+      "area-address": [
+        "49.0001"
+      ],
+      "pfx-sid-index": 101
+    }
+  },
+  "node:1.1.1.1": {
+    "isis_node_attributes": {
+      "node-name": "Phoenix-1",
+      "TLVs": {
+        "18201": {
+          "loopback": "1.1.1.1",
+          "area-address": [
+            "49.0001"
+          ],
+          "pfx-sid-index": 201
+        },
+        "38201": {
+          "loopback": "2.1.1.2",
+          "area-address": [
+            "49.0002"
+          ],
+          "pfx-sid-index": 211
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,826 @@
+{
+    "devices": [
+        {
+            "device_id": {
+                "device_uuid": {
+                    "uuid": "T1.1"
+                }
+            },
+            "device_type": "optical-transponder",
+            "device_drivers": [
+				11
+            ],
+            "device_endpoints": [
+            ],
+            "device_operational_status": 1,
+            "device_config": {
+                "config_rules": [
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/address",
+                            "resource_value": "172.16.31.93"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/port",
+                            "resource_value": "830"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/settings",
+                            "resource_value": {
+                                "username": "hussein",
+                                "password": "flexscale",
+					            "type": "optical-transponder",
+                                "force_running": false,
+                                "hostkey_verify": false,
+                                "look_for_keys": false,
+                                "allow_agent": false,
+                                "commit_per_rule": false,
+                                "device_params": {
+                                    "name": "default"
+                                },
+                                "manager_params": {
+                                    "timeout": 120
+                                },
+                                "endpoints": [
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+		{
+            "device_id": {
+                "device_uuid": {
+                    "uuid": "T2.1"
+                }
+            },
+            "device_type": "optical-transponder",
+            "device_drivers": [
+                11
+            ],
+            "device_endpoints": [
+            ],
+            "device_operational_status": 1,
+            "device_config": {
+                "config_rules": [
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/address",
+                            "resource_value": "172.16.31.93"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/port",
+                            "resource_value": "3830"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/settings",
+                            "resource_value": {
+                                "username": "hussein",
+                                "password": "flexscale",
+								"type": "optical-transponder",
+                                "force_running": false,
+                                "hostkey_verify": false,
+                                "look_for_keys": false,
+                                "allow_agent": false,
+                                "commit_per_rule": false,
+                                "device_params": {
+                                    "name": "default"
+                                },
+                                "manager_params": {
+                                    "timeout": 120
+                                },
+                                "endpoints": [
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+		{
+            "device_id": {
+                "device_uuid": {
+                    "uuid": "MGON1"
+                }
+            },
+            "device_type": "optical-roadm",
+            "device_drivers": [
+                11
+            ],
+            "device_endpoints": [
+            ],
+            "device_operational_status": 1,
+            "device_config": {
+                "config_rules": [
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/address",
+                            "resource_value": "172.24.36.52"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/port",
+                            "resource_value": "44551"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/settings",
+                            "resource_value": {
+                                "username": "admin",
+                                "password": "admin",
+								"type": "optical-roadm",
+                                "force_running": false,
+                                "hostkey_verify": false,
+                                "look_for_keys": false,
+                                "allow_agent": false,
+                                "commit_per_rule": false,
+                                "device_params": {
+                                    "name": "default"
+                                },
+                                "manager_params": {
+                                    "timeout": 120
+                                },
+                                "endpoints": [
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "device_id": {
+                "device_uuid": {
+                    "uuid": "MGON2"
+                }
+            },
+            "device_type": "optical-roadm",
+            "device_drivers": [
+                11
+            ],
+            "device_endpoints": [
+            ],
+            "device_operational_status": 1,
+            "device_config": {
+                "config_rules": [
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/address",
+                            "resource_value": "172.24.36.52"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/port",
+                            "resource_value": "44552"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/settings",
+                            "resource_value": {
+                                "username": "admin",
+                                "password": "admin",
+								"type": "optical-roadm",
+                                "force_running": false,
+                                "hostkey_verify": false,
+                                "look_for_keys": false,
+                                "allow_agent": false,
+                                "commit_per_rule": false,
+                                "device_params": {
+                                    "name": "default"
+                                },
+                                "manager_params": {
+                                    "timeout": 120
+                                },
+                                "endpoints": [
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "device_id": {
+                "device_uuid": {
+                    "uuid": "MGON3"
+                }
+            },
+            "device_type": "optical-roadm",
+            "device_drivers": [
+                11
+            ],
+            "device_endpoints": [
+            ],
+            "device_operational_status": 1,
+            "device_config": {
+                "config_rules": [
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/address",
+                            "resource_value": "172.24.36.52"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/port",
+                            "resource_value": "44553"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/settings",
+                            "resource_value": {
+                                "username": "admin",
+                                "password": "admin",
+								"type": "optical-roadm",
+                                "force_running": false,
+                                "hostkey_verify": false,
+                                "look_for_keys": false,
+                                "allow_agent": false,
+                                "commit_per_rule": false,
+                                "device_params": {
+                                    "name": "default"
+                                },
+                                "manager_params": {
+                                    "timeout": 120
+                                },
+                                "endpoints": [
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+		{
+            "device_id": {
+                "device_uuid": {
+                    "uuid": "MGON4"
+                }
+            },
+            "device_type": "optical-roadm",
+            "device_drivers": [
+                11
+            ],
+            "device_endpoints": [
+            ],
+            "device_operational_status": 1,
+            "device_config": {
+                "config_rules": [
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/address",
+                            "resource_value": "172.24.36.52"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/port",
+                            "resource_value": "44554"
+                        }
+                    },
+                    {
+                        "action": 1,
+                        "custom": {
+                            "resource_key": "_connect/settings",
+                            "resource_value": {
+                                "username": "admin",
+                                "password": "admin",
+								"type": "optical-roadm",
+                                "force_running": false,
+                                "hostkey_verify": false,
+                                "look_for_keys": false,
+                                "allow_agent": false,
+                                "commit_per_rule": false,
+                                "device_params": {
+                                    "name": "default"
+                                },
+                                "manager_params": {
+                                    "timeout": 120
+                                },
+                                "endpoints": [
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "optical_links": [
+		{
+			"name": "T1.1-MGON1",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "T1.1->MGON1"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "T1.1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "1"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-33-in"
+					}
+				}
+			],
+			"optical_details": {
+				"length": 0,
+				"src_port": "1",
+				"dst_port": "port-33-in",
+				"local_peer_port": "1",
+				"remote_peer_port": "port-33-out",
+				"used": false,
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON1-T1.1",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON1->T1.1"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-33-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "T1.1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "1"
+					}
+				}
+			],
+			"optical_details": {
+				"length": 0,
+				"src_port": "port-33-out",
+				"dst_port": "1",
+				"local_peer_port": "port-33-in",
+				"remote_peer_port": "1",
+				"used": false,
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON1-MGON2",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON1->MGON2"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-9-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON2"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-3-in"
+					}
+				}
+			],
+            "optical_details": {
+				"length": 0,
+				"src_port": "port-9-out",
+				"dst_port": "port-3-in",
+				"local_peer_port": "port-9-in",
+				"remote_peer_port": "port-3-out",
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON2-MGON1",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON2->MGON1"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON2"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-3-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-9-in"
+					}
+				}
+			],
+            "optical_details": {
+				"length": 0,
+				"src_port": "port-3-out",
+				"dst_port": "port-9-in",
+				"local_peer_port": "port-3-in",
+				"remote_peer_port": "port-9-out",
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON1-MGON3",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON1->MGON3"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-10-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON3"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-3-in"
+					}
+				}
+			],
+            "optical_details": {
+				"length": 0,
+				"src_port": "port-10-out",
+				"dst_port": "port-3-in",
+				"local_peer_port": "port-10-in",
+				"remote_peer_port": "port-3-out",
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON3-MGON1",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON3->MGON1"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON3"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-3-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-1-in"
+					}
+				}
+			],
+            "optical_details": {
+				"length": 0,
+				"src_port": "port-3-out",
+				"dst_port": "port-10-in",
+				"local_peer_port": "port-3-in",
+				"remote_peer_port": "port-10-out",
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON2-MGON4",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON2->MGON4"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON2"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-1-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON4"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-1-in"
+					}
+				}
+			],
+            "optical_details": {
+				"length": 0,
+				"src_port": "port-1-out",
+				"dst_port": "port-1-in",
+				"local_peer_port": "port-1-in",
+				"remote_peer_port": "port-1-out",
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON4-MGON2",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON4->MGON2"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON4"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-1-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON2"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-1-in"
+					}
+				}
+			],
+            "optical_details": {
+				"length": 0,
+				"src_port": "port-1-out",
+				"dst_port": "port-1-in",
+				"local_peer_port": "port-1-in",
+				"remote_peer_port": "port-1-out",
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON3-MGON4",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON3->MGON4"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON3"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-1-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON4"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-2-in"
+					}
+				}
+			],
+            "optical_details": {
+				"length": 0,
+				"src_port": "port-1-out",
+				"dst_port": "port-2-in",
+				"local_peer_port": "port-1-in",
+				"remote_peer_port": "port-2-out",
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON4-MGON3",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON4->MGON3"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON4"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-2-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON3"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-1-in"
+					}
+				}
+			],
+            "optical_details": {
+				"length": 0,
+				"src_port": "port-2-out",
+				"dst_port": "port-1-in",
+				"local_peer_port": "port-2-in",
+				"remote_peer_port": "port-1-out",
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "T2.1-MGON4",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "T2.1->MGON4"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "T2.1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "1"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON4"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-33-in"
+					}
+				}
+			],
+			"optical_details": {
+				"length": 0,
+				"src_port": "1",
+				"dst_port": "port-33-in",
+				"local_peer_port": "1",
+				"remote_peer_port": "port-33-out",
+				"used": false,
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		},
+		{
+			"name": "MGON4-T2.1",
+			"link_id": {
+				"link_uuid": {
+					"uuid": "MGON4->T2.1"
+				}
+			},
+			"link_endpoint_ids": [
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "MGON4"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "port-33-out"
+					}
+				},
+				{
+					"device_id": {
+						"device_uuid": {
+							"uuid": "T2.1"
+						}
+					},
+					"endpoint_uuid": {
+						"uuid": "1"
+					}
+				}
+			],
+			"optical_details": {
+				"length": 0,
+				"src_port": "port-33-out",
+				"dst_port": "1",
+				"local_peer_port": "port-33-in",
+				"remote_peer_port": "1",
+				"used": false,
+				"c_slots": {"1": 1},
+				"l_slots": {"101": 1},
+				"s_slots": {"501": 1}
+			}
+		}
+	]
+}

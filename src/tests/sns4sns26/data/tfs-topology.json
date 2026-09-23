@@ -1,0 +1,126 @@
+{
+    "contexts": [
+        {"context_id": {"context_uuid": {"uuid": "admin"}}}
+    ],
+    "topologies": [
+        {"topology_id": {"context_id": {"context_uuid": {"uuid": "admin"}}, "topology_uuid": {"uuid": "admin"}}}
+    ],
+    "devices": [
+        {
+            "device_id": {"device_uuid": {"uuid": "cluster-a"}}, "device_type": "emu-datacenter",
+            "device_drivers": ["DEVICEDRIVER_UNDEFINED"],
+            "device_config": {"config_rules": [
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "127.0.0.1"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "0"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {"endpoints": [
+                    {"uuid": "eth1", "type": "copper"}, {"uuid": "int", "type": "copper"}
+                ]}}}
+            ]}
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "cluster-b"}}, "device_type": "emu-datacenter",
+            "device_drivers": ["DEVICEDRIVER_UNDEFINED"],
+            "device_config": {"config_rules": [
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "127.0.0.1"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "0"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {"endpoints": [
+                    {"uuid": "eth1", "type": "copper"}, {"uuid": "int", "type": "copper"}
+                ]}}}
+            ]}
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "router-1"}}, "device_type": "packet-router",
+            "device_drivers": ["DEVICEDRIVER_GNMI_OPENCONFIG"],
+            "device_config": {"config_rules": [
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "172.20.20.101"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "6030"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {
+                    "username": "admin", "password": "admin", "use_tls": false
+                }}}
+            ]}
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "router-2"}}, "device_type": "packet-router",
+            "device_drivers": ["DEVICEDRIVER_GNMI_OPENCONFIG"],
+            "device_config": {"config_rules": [
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "172.20.20.102"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "6030"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {
+                    "username": "admin", "password": "admin", "use_tls": false
+                }}}
+            ]}
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "router-3"}}, "device_type": "packet-router",
+            "device_drivers": ["DEVICEDRIVER_GNMI_OPENCONFIG"],
+            "device_config": {"config_rules": [
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/address", "resource_value": "172.20.20.103"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/port", "resource_value": "6030"}},
+                {"action": "CONFIGACTION_SET", "custom": {"resource_key": "_connect/settings", "resource_value": {
+                    "username": "admin", "password": "admin", "use_tls": false
+                }}}
+            ]}
+        }
+    ],
+    "links": [
+        {
+            "link_id": {"link_uuid": {"uuid": "router-1/Ethernet2==router-2/Ethernet1"}},
+            "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "router-1"}}, "endpoint_uuid": {"uuid": "Ethernet2"}},
+                {"device_id": {"device_uuid": {"uuid": "router-2"}}, "endpoint_uuid": {"uuid": "Ethernet1"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "router-2/Ethernet1==router-1/Ethernet2"}},
+            "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "router-2"}}, "endpoint_uuid": {"uuid": "Ethernet1"}},
+                {"device_id": {"device_uuid": {"uuid": "router-1"}}, "endpoint_uuid": {"uuid": "Ethernet2"}}
+            ]
+        },
+
+        {
+            "link_id": {"link_uuid": {"uuid": "router-2/Ethernet3==router-3/Ethernet2"}},
+            "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "router-2"}}, "endpoint_uuid": {"uuid": "Ethernet3"}},
+                {"device_id": {"device_uuid": {"uuid": "router-3"}}, "endpoint_uuid": {"uuid": "Ethernet2"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "router-3/Ethernet2==router-2/Ethernet3"}},
+            "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "router-3"}}, "endpoint_uuid": {"uuid": "Ethernet2"}},
+                {"device_id": {"device_uuid": {"uuid": "router-2"}}, "endpoint_uuid": {"uuid": "Ethernet3"}}
+            ]
+        },
+
+        {
+            "link_id": {"link_uuid": {"uuid": "router-1/Ethernet10==cluster-a/eth1"}},
+            "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "router-1"}}, "endpoint_uuid": {"uuid": "Ethernet10"}},
+                {"device_id": {"device_uuid": {"uuid": "cluster-a"}}, "endpoint_uuid": {"uuid": "eth1"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "cluster-a/eth1==router-1/Ethernet10"}},
+            "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "cluster-a"}}, "endpoint_uuid": {"uuid": "eth1"}},
+                {"device_id": {"device_uuid": {"uuid": "router-1"}}, "endpoint_uuid": {"uuid": "Ethernet10"}}
+            ]
+        },
+
+        {
+            "link_id": {"link_uuid": {"uuid": "router-3/Ethernet10==cluster-b/eth1"}},
+            "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "router-3"}}, "endpoint_uuid": {"uuid": "Ethernet10"}},
+                {"device_id": {"device_uuid": {"uuid": "cluster-b"}}, "endpoint_uuid": {"uuid": "eth1"}}
+            ]
+        },
+        {
+            "link_id": {"link_uuid": {"uuid": "cluster-b/eth1==router-3/Ethernet10"}},
+            "link_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "cluster-b"}}, "endpoint_uuid": {"uuid": "eth1"}},
+                {"device_id": {"device_uuid": {"uuid": "router-3"}}, "endpoint_uuid": {"uuid": "Ethernet10"}}
+            ]
+        }
+    ]
+}

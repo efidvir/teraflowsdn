@@ -1,0 +1,86 @@
+{
+  "ietf-access-control-list:acls": {
+    "acl": [
+      {
+        "name": "eth10-permit-other",
+        "type": "ipv4-acl-type",
+        "aces": {
+          "ace": [{
+            "name": "eth10-permit-other",
+            "matches": {
+              "ingress-interface": "Ethernet10"
+            },
+            "actions": {"forwarding": "accept"}
+          }]
+        }
+      },
+      {
+        "name": "eth11-block-ping-permit-other",
+        "type": "ipv4-acl-type",
+        "aces": {
+          "ace": [{
+            "name": "eth11-block-ping",
+            "matches": {
+              "ingress-interface": "Ethernet11",
+              "ipv4": {
+                "protocol": 1,
+                "source-ipv4-network": "172.16.11.10/32",
+                "destination-ipv4-network": "172.16.10.10/32"
+              },
+              "icmp": {}
+            },
+            "actions": {"forwarding": "reject"}
+          },
+          {
+            "name": "eth11-permit-other",
+            "matches": {
+              "ingress-interface": "Ethernet11"
+            },
+            "actions": {"forwarding": "accept"}
+          }]
+        }
+      },
+      {
+        "name": "eth12-permit-other",
+        "type": "ipv4-acl-type",
+        "aces": {
+          "ace": [{
+            "name": "eth12-permit-other",
+            "matches": {
+              "ingress-interface": "Ethernet12"
+            },
+            "actions": {"forwarding": "accept"}
+          }]
+        }
+      }
+    ],
+    "attachment-points": {
+      "interface": [
+        {
+          "interface-id": "Ethernet10",
+          "ingress": {
+            "acl-sets": {
+              "acl-set": [{"name": "eth10-permit-other"}]
+            }
+          }
+        },
+        {
+          "interface-id": "Ethernet11",
+          "ingress": {
+            "acl-sets": {
+              "acl-set": [{"name": "eth11-block-ping-permit-other"}]
+            }
+          }
+        },
+        {
+          "interface-id": "Ethernet12",
+          "ingress": {
+            "acl-sets": {
+              "acl-set": [{"name": "eth12-permit-other"}]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

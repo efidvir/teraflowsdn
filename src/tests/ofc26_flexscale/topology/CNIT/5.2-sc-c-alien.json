@@ -1,0 +1,25 @@
+{
+    "services": [
+        {
+            "service_id": {
+                "context_id": {"context_uuid": {"uuid": "admin"}},
+                "service_uuid": {"uuid": "super-channel-c"}
+            },
+            "service_type": 6,
+            "service_status": {"service_status": 1},
+            "service_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "MGON1"}}, "endpoint_uuid": {"uuid": "port-29-in"}},
+                {"device_id": {"device_uuid": {"uuid": "MGON4"}}, "endpoint_uuid": {"uuid": "port-29-out"}}
+            ],
+            "service_constraints": [
+                {"custom": {"constraint_type": "type", "constraint_value": "multi_granular"}},
+				{"custom": {"constraint_type": "alien", "constraint_value": "1"}},
+				{"custom": {"constraint_type": "alien_spectrum[GHz]", "constraint_value": "3000"}},
+                {"custom": {"constraint_type": "optical_band_id", "constraint_value": "4"}},
+                {"custom": {"constraint_type": "bidirectionality", "constraint_value": "0"}}
+
+            ],
+            "service_config": {"config_rules": []}
+        }
+    ]
+}

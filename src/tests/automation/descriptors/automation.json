@@ -1,0 +1,38 @@
+{
+    "target_service_id": {
+        "service_uuid": {"uuid": "b2a60c5b-8c46-5707-a64a-9c6539d395f2"},
+        "context_id": {"context_uuid": {"uuid": "43813baf-195e-5da6-af20-b3d0922e71a7"}}
+    },
+    "telemetry_service_id": {
+        "service_uuid": {"uuid": "7397bdf2-eec8-57f4-9406-4f9e9f3dc50e"},
+        "context_id": {"context_uuid": {"uuid": "43813baf-195e-5da6-af20-b3d0922e71a7"}}
+    },
+    "analyzer":{
+        "operation_mode": "ANALYZEROPERATIONMODE_STREAMING",
+        "parameters": {
+            "thresholds": "{\"task_type\": \"AggregationHandler\",\"task_parameter\": [ {\"last\": [-20, 5]}]}"
+        },
+        "input_kpi_ids": [
+            {"kpi_id": { "uuid": "6e22f180-ba28-4641-b190-2287bf447777"}}
+        ],
+        "output_kpi_ids": [
+            {"kpi_id": { "uuid": "c45b09d8-c84a-45d8-b4c2-9fa9902d157d"}}
+        ],
+        "batch_min_duration_s": 10,
+        "batch_min_size": 5
+    },
+     "policy": {
+        "serviceId": {
+            "context_id": {"context_uuid": {"uuid": "43813baf-195e-5da6-af20-b3d0922e71a7"}},
+            "service_uuid": {"uuid": "b2a60c5b-8c46-5707-a64a-9c6539d395f2"}
+        },
+        "policyRuleBasic": {
+            "actionList": [
+                {
+                    "action": "POLICY_RULE_ACTION_RECALCULATE_PATH",
+                    "action_config": []
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,46 @@
+description: "Chassis configuration for a single Stratum bmv2 switch with 3 ports"
+chassis {
+  platform: PLT_P4_SOFT_SWITCH
+  name: "bmv2-1"
+}
+nodes {
+  id: 1
+  slot: 1
+  index: 1
+}
+singleton_ports {
+  id: 1
+  name: "dp-1"
+  slot: 1
+  port: 1
+  channel: 1
+  speed_bps: 100000000000
+  config_params {
+    admin_state: ADMIN_STATE_ENABLED
+  }
+  node: 1
+}
+singleton_ports {
+  id: 2
+  name: "dp-2"
+  slot: 1
+  port: 2
+  channel: 1
+  speed_bps: 100000000000
+  config_params {
+    admin_state: ADMIN_STATE_ENABLED
+  }
+  node: 1
+}
+singleton_ports {
+  id: 3
+  name: "mgmt"
+  slot: 1
+  port: 3
+  channel: 1
+  speed_bps: 100000000000
+  config_params {
+    admin_state: ADMIN_STATE_ENABLED
+  }
+  node: 1
+}

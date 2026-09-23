@@ -1,0 +1,140 @@
+{
+    "service_id": {
+        "context_id": {"context_uuid": {"uuid": "admin"}},
+        "service_uuid": {"uuid": "p4-service-upf"}
+    },
+    "name": "p4-service-upf",
+    "service_type": "SERVICETYPE_UPF",
+    "service_endpoint_ids": [
+        {
+            "device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}},
+            "endpoint_uuid": {"uuid": "sw1-1"}
+        },
+        {
+            "device_id": {"device_uuid": {"uuid": "sw1-5g-upf"}},
+            "endpoint_uuid": {"uuid": "sw1-2"}
+        }
+    ],
+    "service_config": {
+        "config_rules": [
+            {
+                "action": "CONFIGACTION_SET",
+                "custom": {
+                    "resource_key": "/settings",
+                    "resource_value": {
+                        "switch_info": [
+                            {
+                                "sw1-5g-upf": {
+                                    "arch": "v1model",
+                                    "dpid": 1,
+                                    "port_list": [
+                                        {
+                                            "port_id": 1,
+                                            "port_type": "host",
+                                            "vlan_id": 4094
+                                        },
+                                        {
+                                            "port_id": 2,
+                                            "port_type": "host",
+                                            "vlan_id": 4094
+                                        }
+                                    ],
+                                    "fwd_list": [
+                                        {
+                                            "port_id": 1,
+                                            "host_mac": "50:3e:aa:85:89:09",
+                                            "host_label": "N3 - 5G gNB"
+                                        },
+                                        {
+                                            "port_id": 2,
+                                            "host_mac": "50:3e:aa:52:3e:38",
+                                            "host_label": "N3 - 5G UPF"
+                                        },
+                                        {
+                                            "port_id": 1,
+                                            "host_mac": "18:a6:f7:0e:73:e5",
+                                            "host_label": "N6 - 5G UPF"
+                                        },
+                                        {
+                                            "port_id": 2,
+                                            "host_mac": "50:3e:aa:96:ba:dd",
+                                            "host_label": "N6 - Data Network"
+                                        }
+                                    ],
+                                    "routing_list": [
+                                        {
+                                            "port_id": 1,
+                                            "ipv4_dst": "10.10.2.2",
+                                            "ipv4_prefix_len": 32,
+                                            "mac_src": "18:a6:f7:0e:73:e5",
+                                            "mac_dst": "50:3e:aa:96:ba:dd"
+                                        },
+                                        {
+                                            "port_id": 2,
+                                            "ipv4_dst": "12.1.1.0",
+                                            "ipv4_prefix_len": 24,
+                                            "mac_src": "50:3e:aa:52:3e:38",
+                                            "mac_dst": "50:3e:aa:85:89:09"
+                                        }
+                                    ],
+                                    "upf": {
+                                        "uplink_port": 1,
+                                        "uplink_ip": "10.10.1.1",
+                                        "uplink_mac": "50:3e:aa:52:3e:38",
+
+                                        "downlink_port": 2,
+                                        "downlink_ip": "10.10.2.1",
+                                        "downlink_mac": "18:a6:f7:0e:73:e5",
+
+                                        "slice_id": 0,
+                                        "teid": 1,
+                                        "app_id": 0,
+                                        "app_meter_id": 0,
+                                        "ctr_id": 401,
+                                        "tc_id": 3,
+                                        "tunnel_peer_id": 1
+                                    },
+                                    "gnb": {
+                                        "ip": "10.10.1.2",
+                                        "mac": "50:3e:aa:85:89:09"
+                                    },
+                                    "ue_list": [
+                                        {
+                                            "ue_id": "UE 1",
+                                            "ue_ip": "12.1.1.51",
+                                            "pdu_sessions": [
+                                                {
+                                                    "pdu_session_id": 0,
+                                                    "dnn": "Data Network 1",
+                                                    "pdu_session_type": "0x0800",
+                                                    "gtpu_tunnel": {
+                                                        "uplink": {
+                                                            "src": "10.10.1.2",
+                                                            "dst": "10.10.1.1"
+                                                        },
+                                                        "downlink": {
+                                                            "src": "10.10.1.1",
+                                                            "dst": "10.10.1.2"
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            "qos_flows": [
+                                                {
+                                                    "qfi": 0,
+                                                    "5qi": 9,
+                                                    "qos_type": "Non-GBR"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "service_constraints": []
+}

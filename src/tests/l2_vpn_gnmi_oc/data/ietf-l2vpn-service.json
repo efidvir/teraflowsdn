@@ -1,0 +1,83 @@
+{
+    "ietf-l2vpn-svc:l2vpn-svc": {
+        "vpn-services": {"vpn-service": [
+            {
+                "vpn-id": "ietf-l2vpn-svc",
+                "vpn-svc-type": "vpws",
+                "svc-topo": "any-to-any",
+                "customer-name": "somebody",
+                "ce-vlan-preservation": true,
+                "ce-vlan-cos-preservation": true,
+                "frame-delivery": {
+                    "multicast-gp-port-mapping": "ietf-l2vpn-svc:static-mapping"
+                }
+            }
+        ]},
+        "sites": {
+            "site": [
+                {
+                    "site-id": "site_DC1",
+                    "management": {"type": "ietf-l2vpn-svc:provider-managed"},
+                    "locations": {"location": [{"location-id": "DC1"}]},
+                    "devices": {"device": [{"device-id": "dc1", "location": "DC1"}]},
+                    "default-ce-vlan-id": 1,
+                    "site-network-accesses": {
+                        "site-network-access": [
+                            {
+                                "network-access-id": "eth1",
+                                "type": "ietf-l2vpn-svc:multipoint",
+                                "device-reference": "dc1",
+                                "vpn-attachment": {
+                                    "vpn-id": "ietf-l2vpn-svc",
+                                    "site-role": "ietf-l2vpn-svc:any-to-any-role"
+                                },
+                                "bearer": {"bearer-reference": "r1:Ethernet10"},
+                                "service": {"svc-mtu": 1400},
+                                "connection": {
+                                    "encapsulation-type": "vlan",
+                                    "eth-inf-type": "ietf-l2vpn-svc:tagged",
+                                    "tagged-interface": {
+                                        "type": "ietf-l2vpn-svc:dot1q",
+                                        "dot1q-vlan-tagged": {"cvlan-id": 125}
+                                    },
+                                    "oam": {"md-name": "fake-md-name", "md-level": 0}
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "site-id": "site_DC2",
+                    "management": {"type": "ietf-l2vpn-svc:provider-managed"},
+                    "locations": {"location": [{"location-id": "DC2"}]},
+                    "devices": {"device": [{"device-id": "dc2", "location": "DC2"}]},
+                    "default-ce-vlan-id": 1,
+                    "site-network-accesses": {
+                        "site-network-access": [
+                            {
+                                "network-access-id": "eth1",
+                                "type": "ietf-l2vpn-svc:multipoint",
+                                "device-reference": "dc2",
+                                "vpn-attachment": {
+                                    "vpn-id": "ietf-l2vpn-svc",
+                                    "site-role": "ietf-l2vpn-svc:any-to-any-role"
+                                },
+                                "bearer": {"bearer-reference": "r3:Ethernet10"},
+                                "service": {"svc-mtu": 1400},
+                                "connection": {
+                                    "encapsulation-type": "vlan",
+                                    "eth-inf-type": "ietf-l2vpn-svc:tagged",
+                                    "tagged-interface": {
+                                        "type": "ietf-l2vpn-svc:dot1q",
+                                        "dot1q-vlan-tagged": {"cvlan-id": 125}
+                                    },
+                                    "oam": {"md-name": "fake-md-name", "md-level": 0}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

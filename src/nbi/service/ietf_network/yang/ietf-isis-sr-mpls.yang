@@ -1,0 +1,35 @@
+module ietf-isis-sr-mpls {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-isis-sr-mpls";
+  prefix isis-sr-mpls;
+
+  import ietf-network {
+    prefix nw;
+  }
+  import ietf-l3-unicast-topology {
+    prefix l3t;
+  }
+  import ietf-l3-isis-topology {
+    prefix isis-topology;
+  }
+
+  organization
+    "TeraFlowSDN";
+  contact
+    "TFS";
+  description
+    "IS-IS SR MPLS extensions.";
+
+  revision 2025-02-19 {
+    description
+      "Initial revision.";
+  }
+
+  augment "/nw:networks/nw:network/nw:node/l3t:l3-node-attributes/isis-topology:isis-node-attributes" {
+     container segment-routing-mpls {
+        leaf pfx-sid-index {
+          type uint32;
+        }
+     }
+  }
+}

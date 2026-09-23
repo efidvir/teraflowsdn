@@ -1,0 +1,82 @@
+[
+  {
+    "device-id": "R1",
+    "service_endpoint_id": "ep-R1-1/2",
+    "service_mapping_info": {
+      "bearer": {
+        "bearer-reference": "R1:1/2"
+      },
+      "site-id": "1"
+    }
+  },
+  {
+    "device-id": "R1",
+    "service_endpoint_id": "ep-R1-1/3",
+    "service_mapping_info": {
+      "bearer": {
+        "bearer-reference": "R1:1/3"
+      },
+      "site-id": "1"
+    }
+  },
+  {
+    "device-id": "R2",
+    "service_endpoint_id": "ep-R2-1/2",
+    "service_mapping_info": {
+      "bearer": {
+        "bearer-reference": "R2:1/2"
+      },
+      "site-id": "2"
+    }
+  },
+  {
+    "device-id": "R2",
+    "service_endpoint_id": "ep-R2-1/3",
+    "service_mapping_info": {
+      "bearer": {
+        "bearer-reference": "R2:1/3"
+      },
+      "site-id": "2"
+    }
+  },
+  {
+    "device-id": "R3",
+    "service_endpoint_id": "ep-R3-1/2",
+    "service_mapping_info": {
+      "bearer": {
+        "bearer-reference": "R3:1/2"
+      },
+      "site-id": "3"
+    }
+  },
+  {
+    "device-id": "R3",
+    "service_endpoint_id": "ep-R3-1/3",
+    "service_mapping_info": {
+      "bearer": {
+        "bearer-reference": "R3:1/3"
+      },
+      "site-id": "3"
+    }
+  },
+  {
+    "device-id": "R4",
+    "service_endpoint_id": "ep-R4-1/2",
+    "service_mapping_info": {
+      "bearer": {
+        "bearer-reference": "R4:1/2"
+      },
+      "site-id": "4"
+    }
+  },
+  {
+    "device-id": "R4",
+    "service_endpoint_id": "ep-R4-1/3",
+    "service_mapping_info": {
+      "bearer": {
+        "bearer-reference": "R4:1/3"
+      },
+      "site-id": "4"
+    }
+  }
+]

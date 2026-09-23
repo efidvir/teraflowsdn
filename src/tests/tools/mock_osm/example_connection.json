@@ -1,0 +1,6 @@
+{
+  "wim_ip": "10.0.2.10",
+  "wim_port": 80,
+  "wim_user": "admin",
+  "wim_pass": "admin"
+}

@@ -1,0 +1,25 @@
+{
+    "services": [
+        {
+            "service_id": {
+                "context_id": {"context_uuid": {"uuid": "admin"}},
+                "service_uuid": {"uuid": "optical-band-L"}
+            },
+            "service_type": 6,
+            "service_status": {"service_status": 1},
+            "service_endpoint_ids": [
+                {"device_id": {"device_uuid": {"uuid": "MGON1"}}, "endpoint_uuid": {"uuid": "port-1-out"}},
+                {"device_id": {"device_uuid": {"uuid": "MGON4"}}, "endpoint_uuid": {"uuid": "port-9-in"}}
+            ],
+            "service_constraints": [
+                {"custom": {"constraint_type": "type", "constraint_value": "multi_granular"}},
+                {"custom": {"constraint_type": "bidirectionality", "constraint_value": "0"}},
+                {"custom": {"constraint_type": "preferred_band", "constraint_value": "L_BAND"}},
+				{"custom": {"constraint_type": "optical-band-width[GHz]", "constraint_value": "3000"}},
+				{"custom": {"constraint_type": "disjoint_optical_band_id", "constraint_value": "1"}}
+
+            ],
+            "service_config": {"config_rules": []}
+        }
+    ]
+}
