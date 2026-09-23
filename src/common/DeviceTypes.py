@@ -67,6 +67,7 @@ class DeviceTypeEnum(Enum):
     MORPHEUS                        = 'morpheus'
     OPENFLOW_RYU_CONTROLLER         = 'openflow-ryu-controller'
     DSCM_NODE                       = 'dscm'
+    CERAGON_WIRELESS                = 'ceragon-wireless'
 
     # ETSI TeraFlowSDN controller
     TERAFLOWSDN_CONTROLLER          = 'teraflowsdn'

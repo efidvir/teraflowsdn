@@ -270,3 +270,19 @@ if LOAD_ALL_DEVICE_DRIVERS:
                 FilterFieldEnum.DRIVER : DeviceDriverEnum.DEVICEDRIVER_RESTCONF_OPENCONFIG,
             }
         ]))
+
+if LOAD_ALL_DEVICE_DRIVERS:
+    # pylint: disable=wrong-import-position
+    from .ceragon.CeragonDriver import CeragonDriver
+    DRIVERS.append(
+        (CeragonDriver, [
+            {
+                FilterFieldEnum.DEVICE_TYPE: [
+                    DeviceTypeEnum.MICROWAVE_RADIO_SYSTEM,
+                    DeviceTypeEnum.CERAGON_WIRELESS,
+                    DeviceTypeEnum.PACKET_RADIO_ROUTER,
+                ],
+                FilterFieldEnum.DRIVER : DeviceDriverEnum.DEVICEDRIVER_CERAGON,
+            }
+        ]))
+
