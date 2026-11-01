@@ -21,10 +21,20 @@ endpoint discovery, and YANG schema compliance for ETSI TeraFlowSDN.
 from __future__ import annotations
 
 import json
+import sys
+import types
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from requests import Response
+
+try:
+    import common.proto.context_pb2  # noqa: F401
+except ModuleNotFoundError:
+    _drivers_pkg = types.ModuleType("device.service.drivers")
+    _drivers_pkg.__path__ = [str(Path(__file__).resolve().parents[1] / "service" / "drivers")]
+    sys.modules.setdefault("device.service.drivers", _drivers_pkg)
 
 from device.service.driver_api._Driver import RESOURCE_ENDPOINTS
 from device.service.drivers.ceragon.CeragonDriver import CeragonDriver
@@ -112,7 +122,7 @@ def test_driver_get_config(mock_ceragon_driver):
     assert "/device/capabilities" in res_dict
     caps = json.loads(res_dict["/device/capabilities"])
     assert caps["beamforming"] is True
-    assert caps["yang_schemas_bundled"] == 51
+    assert caps["yang_schemas_bundled"] == 84
 
 
 def test_driver_set_config_radio_tuning(mock_ceragon_driver):
@@ -193,15 +203,35 @@ def test_driver_disconnect(mock_ceragon_driver):
 
 
 def test_yang_schemas_completeness():
+    from device.service.drivers.ceragon.schemas import validate_schema_closure
+    from device.service.drivers.ceragon.portfolio import list_models, resolve_model
+
     schemas = list_available_schemas()
-    assert len(schemas) == 51
-    assert "radio-bridge-tg" in schemas
+    assert len(schemas) == 84
+    assert "radio-bridge-tg-radio-common" in schemas
     assert "ietf-interfaces" in schemas
     assert "ietf-datastores" in schemas
     assert "radio-bridge-tg-acm" in schemas
+    assert "ceragon-radio-link" in schemas
+    assert "ceragon-qos" in schemas
+    assert "ceragon-multiband" in schemas
+    assert "ceragon-oran-xhaul" in schemas
 
     all_content = get_all_schemas()
-    assert len(all_content) == 51
+    assert len(all_content) == 84
     for name, content in all_content.items():
         assert len(content) > 0
         assert f"module {name}" in content or "submodule" in content or "module" in content
+
+    ok, closure = validate_schema_closure()
+    assert ok is True
+    assert closure["closure_complete"] is True
+    assert closure["missing_dependencies"] == {}
+
+    all_models = list_models(include_fallbacks=True)
+    assert len(all_models) == 36
+    for spec in all_models:
+        resolved = resolve_model(spec.model)
+        assert resolved is not None
+        assert resolved.family == spec.family
+

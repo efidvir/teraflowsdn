@@ -34,8 +34,12 @@ from .models import (
     CeragonOperatingParameters,
     CeragonRadioSector,
 )
+from .portfolio import FLAVOR_CERAOS, FLAVOR_SIKLU_TG, resolve_model
+from .schemas import list_schemas
 from .templates import (
     build_acm_floor_hardening_payload,
+    build_config_payload,
+    build_delete_uri,
     build_radio_tuning_payload,
     build_vlan_slice_payload,
 )
@@ -171,7 +175,7 @@ class CeragonRestClient:
             "beamforming": True,
             "max_throughput_gbps": 1.0,
             "interfaces": ["eth1", "rf-sector-1", "Host"],
-            "yang_schemas_bundled": 51,
+            "yang_schemas_bundled": len(list_schemas()),
             "candidate_datastore": True,
         }
 
@@ -273,3 +277,57 @@ class CeragonRestClient:
             self.discard_candidate()
             return False, msg
         return self.commit_candidate()
+
+    def apply_domain_config(
+        self,
+        config_type: str,
+        parameters: Dict[str, Any],
+        model: Optional[str] = None,
+    ) -> Tuple[bool, str]:
+        """Apply any of the 12 control domains to Siklu TG/EH (2PC) or CeraOS (/restconf/data)."""
+        spec = resolve_model(model or "MH-T261")
+        flavor = spec.api_flavor if spec else FLAVOR_SIKLU_TG
+        payload = build_config_payload(config_type, parameters, api_flavor=flavor)
+        if flavor == FLAVOR_CERAOS:
+            try:
+                resp = self.session.patch(
+                    f"{self.base_url}/restconf/data",
+                    data=json.dumps(payload),
+                    timeout=self.timeout,
+                )
+                return resp.status_code in (200, 201, 204), f"HTTP {resp.status_code}"
+            except Exception as e:
+                return False, str(e)
+        ok, msg = self.stage_candidate(payload)
+        if not ok:
+            self.discard_candidate()
+            return False, msg
+        return self.commit_candidate()
+
+    def delete_domain_config(
+        self,
+        config_type: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        model: Optional[str] = None,
+    ) -> Tuple[bool, str]:
+        """Delete a configured domain resource over RESTCONF."""
+        spec = resolve_model(model or "MH-T261")
+        flavor = spec.api_flavor if spec else FLAVOR_SIKLU_TG
+        rel_uri = build_delete_uri(config_type, parameters or {}, api_flavor=flavor)
+        try:
+            resp = self.session.delete(f"{self.base_url}{rel_uri}", timeout=self.timeout)
+            if flavor != FLAVOR_CERAOS and resp.status_code in (200, 204):
+                return self.commit_candidate()
+            return resp.status_code in (200, 204), f"HTTP {resp.status_code}"
+        except Exception as e:
+            return False, str(e)
+
+    def get_telemetry_snapshot(self) -> Dict[str, Any]:
+        """Return northbound PM telemetry snapshot from device state."""
+        state = self.get_device_state()
+        return {
+            "device": state.hardware_info.to_dict(),
+            "operating_parameters": state.operating_parameters.to_dict(),
+            "radio_sectors": [s.to_dict() for s in state.radio_sectors],
+        }
+

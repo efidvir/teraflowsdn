@@ -8,25 +8,25 @@ The project originated from "[Teraflow H2020 project](https://teraflow-h2020.eu/
 
 ## Ceragon Wireless Radio Transport Driver (Southbound Interface)
 
-This repository includes the native **Ceragon Wireless Radio Transport Driver** (`src/device/service/drivers/ceragon/`), providing ETSI TeraFlowSDN with Southbound Interface (SBI) control over Ceragon millimeter-wave (mmWave), E-band, and microwave radio links.
+This repository includes the native **Ceragon Wireless Radio Transport Driver** (`src/device/service/drivers/ceragon/`), providing ETSI TeraFlowSDN with Southbound Interface (SBI) control and bidirectional telemetry streaming across the entire Ceragon Networks & Siklu-by-Ceragon wireless transport portfolio (**5 product families, 31 explicit hardware models + 5 family fallbacks, 12 control domains, and 84 YANG 1.1 schemas with 100% dependency closure**).
 
 ### Key Capabilities
 
-- **RFC 8040 RESTCONF Candidate Datastore Architecture**: Full transaction management utilizing the 2-Phase Commit pattern (`PATCH /restconf/ds/ietf-datastores:candidate` followed by atomic `ietf-netconf:commit`, with automated rollback via `discard-changes` on validation failure).
-- **Automated Endpoint & Topology Discovery**: Introspects physical hardware and registers copper ports (RJ-45, SFP+ 1G/10G) and wireless radio sectors (`rf-sector`, phased array beamforming antennas) into the TFS Context and Topology services.
-- **Dynamic Radio Parameter Tuning**: Programmatic configuration of carrier frequency, channel bandwidth, transmit power, and ATPC (Automatic Transmit Power Control).
-- **Transport Network Slicing**: Dynamic instantiation and teardown of IEEE 802.1Q VLAN sub-interfaces, bridge domains, and token-bucket bandwidth shaping profiles.
-- **Adaptive Modulation & Coding (ACM) Floor Hardening**: Weather-aware intent dispatching enforcing minimum MCS floors to protect ultra-reliable low-latency communications (URLLC) during rain-fade events.
-- **51 Physical YANG Data Models Bundled**: Complete RFC-compliant schema library extracted directly from physical hardware via RFC 6022 NETCONF monitoring (`radio-bridge-tg-*`, `ieee802-dot1q-*`, `ietf-*`).
-- **Telemetry & Real-Time Monitoring**: Streaming and on-demand polling of thermal sensors (modem/RF temperatures), RSSI, SNR, and link loss metrics into the TFS Monitoring Service.
+- **Full 5-Family Portfolio Catalog (`portfolio.py`)**: Resolves 31 explicit hardware models (`IP-20C`, `IP-20C-HP`, `IP-20S`, `IP-20E`, `IP-20V`, `IP-20N`, `IP-20A`, `IP-20A-LH`, `IP-20G`, `IP-20GX`, `IP-50C`, `IP-50CX`, `IP-50E`, `IP-50EX`, `IP-50EXA`, `IP-50FX`, `IP-100E`, `EH-614TX`, `EH-710TX`, `EH-1200TX`, `EH-1200FX`, `EH-2500FX`, `EH-8010FX`, `EH-8020FX`, `MH-T261`, `MH-T260`, `MH-T265`, `MH-T280`, `MH-N265`, `MH-N366`, `MH-N367`) and 5 family fallbacks (`IP-20`, `IP-50`, `IP-100`, `EtherHaul`, `MultiHaul TG`) to their exact API flavor (`siklu_tg`, `siklu_eh`, `ceraos`), RF bands, and hardware capability bitmask.
+- **RFC 8040 RESTCONF Candidate Datastore & CeraOS Running DS Architecture**: Full transaction management utilizing the 2-Phase Commit pattern (`PATCH /restconf/ds/ietf-datastores:candidate` followed by atomic `ietf-netconf:commit`, with automated rollback via `discard-changes` on validation failure) for Siklu/Terragraph devices and direct RFC 8040 `/restconf/data` editing for CeraOS (`IP-20` / `IP-50` / `IP-100`).
+- **12 Bidirectional Control Domains**: Southbound `SetConfig` and `DeleteConfig` across `radio_tuning`, `acm`/`modulation`, `qos` (8-CoS SP+DRR & IEEE 802.1Qbv GCL), `slice` (VLAN & PIR shapers), `protection` (1+1 HSB, Space Diversity, Terragraph `active-backup`), `beamforming` (60 GHz beam index & `start-topo-scan` RPC), `multiband` (E-band + MW L1 bonding), `sync` (ITU-T G.8275.1 PTP + SyncE), `security` (IEEE 802.1AE MACsec AES-128/256-GCM), `energy` (Green-ATPC & carrier sleep), `oran_xhaul` (Split 7.2x eCPRI BFP9), and `interference` (XPIC + ATPC boost).
+- **84 Bundled YANG 1.1 Data Models (100% Dependency Closure)**: Complete RFC-compliant schema library (`schemas/yang/`) covering 62 Siklu/Terragraph modules (`radio-bridge-tg-*`, `ietf-snmp-*` submodules, NMDA/RESTCONF), `radio-bridge-eh-radio.yang` for EtherHaul, 10 CeraOS modules (`ceragon-*.yang`), and IETF/IEEE standard modules (`ietf-microwave-radio-link` RFC 8561, `ieee802-dot1q-sched` 802.1Qbv, `ieee802-dot1ae-macsec`, `ietf-ptp`, `ietf-interfaces`, `ietf-hardware`, `ietf-system`) with **0 missing imports or includes, 58 RPCs, and 5 notifications**.
+- **Bidirectional Telemetry & Event Streaming (`Subscribe` / `Unsubscribe`)**: Northbound background polling and event/alarm detection streaming RSL, SNR, SINR, modulation, throughput, BER/ES/SES, temperature, power, PTP time error, and protection state into the TFS Monitoring Service.
 
 ### Supported Hardware Families
 
-| Hardware Family | Model Series | Frequency Band | Max Throughput | Interface Types | Datastore Engine |
+| Hardware Family | Model Series | Frequency Band | Max Throughput | API Flavor | Bundled YANG Schemas |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **MultiHaul TG** | `MH-T261`, `MH-T280`, `MH-N366` | 57–66 GHz (V-Band) | Up to 3.8 Gbps | 1G/10G Copper & SFP+ | Clixon RFC 8040 RESTCONF |
-| **EtherHaul** | `EH-8010FX`, `EH-2500FX`, `EH-1200` | 70/80 GHz (E-Band) | Up to 10 Gbps | 1G/10G SFP+ | RESTCONF Candidate |
-| **CeraOS Microwave** | `IP-50C`, `IP-50E`, `IP-20C`, `IP-20N` | 6–42 GHz (Microwave) | Up to 20 Gbps (XPIC/MRMC) | Multi-Gigabit Carrier Ethernet | CeraOS REST / NETCONF |
+| **MultiHaul TG** | `MH-T261` *(lab-verified)*, `MH-T260`, `MH-T265`, `MH-T280`, `MH-N265`, `MH-N366`, `MH-N367` | 57–71 GHz (V-Band Terragraph) | Up to 16 Gbps | `siklu_tg` (RFC 8040 Candidate DS) | 62 modules (`radio-bridge-tg-*`, `ietf-snmp-*`, NMDA) |
+| **EtherHaul** | `EH-614TX`, `EH-710TX`, `EH-1200TX`, `EH-1200FX`, `EH-2500FX`, `EH-8010FX`, `EH-8020FX` | 57–66 GHz & 71–86 GHz (E-Band) | Up to 20 Gbps | `siklu_eh` (RESTCONF Candidate DS) | `radio-bridge-eh-radio.yang` + shared Siklu & IETF models |
+| **FibeAir IP-20** | `IP-20C`, `IP-20C-HP`, `IP-20S`, `IP-20E`, `IP-20V`, `IP-20N`, `IP-20A`, `IP-20A-LH`, `IP-20G`, `IP-20GX` | 4–42 GHz MW, 60 GHz, 71–86 GHz | Up to 10 Gbps | `ceraos` (RESTCONF `/restconf/data`) | 10 `ceragon-*.yang` + `ietf-microwave-radio-link` (RFC 8561) |
+| **FibeAir IP-50** | `IP-50C`, `IP-50CX`, `IP-50E`, `IP-50EX`, `IP-50EXA`, `IP-50FX` | 6–42 GHz MW & 71–86 GHz Multi-Band | Up to 25 Gbps | `ceraos` (RESTCONF `/restconf/data`) | 10 `ceragon-*.yang` + `ieee802-dot1q-sched` + `ieee802-dot1ae-macsec` + `ietf-ptp` |
+| **IP-100** | `IP-100E` | 71–86 GHz Dual-Carrier E-Band | Up to 25 Gbps | `ceraos` (RESTCONF `/restconf/data`) | 10 `ceragon-*.yang` + RFC 8561 + IEEE 802.1Qbv / 802.1AE |
 
 ---
 
@@ -43,26 +43,28 @@ flowchart TD
 
     subgraph DRIVER ["Ceragon Southbound Driver (src/device/service/drivers/ceragon/)"]
         CD["CeragonDriver (_Driver Subclass)"]
-        CLIENT["CeragonRestClient (RFC 8040 Engine)"]
-        MODELS["Transport Domain Models & Schemas"]
-        YANG["51 Extracted YANG Schemas"]
+        PORT["Portfolio Catalog (5 Families, 36 Entries)"]
+        CLIENT["CeragonRestClient (siklu_tg / siklu_eh / ceraos)"]
+        MODELS["12-Domain Transport Models & Templates"]
+        YANG["84 Bundled YANG 1.1 Schemas (100% Closure)"]
     end
 
-    subgraph HARDWARE ["Ceragon Wireless Hardware"]
-        T261["MultiHaul TG MH-T261 (60 GHz mmWave)"]
-        EH["EtherHaul EH-8010FX (70/80 GHz E-Band)"]
-        IP50["CeraOS IP-50C / IP-50E (Microwave)"]
+    subgraph HARDWARE ["Ceragon & Siklu Wireless Portfolio"]
+        T261["MultiHaul TG (MH-T261..MH-N367, 60 GHz)"]
+        EH["EtherHaul (EH-614TX..EH-8020FX, E/V-Band)"]
+        IP["CeraOS (IP-20 / IP-50 / IP-100, MW & E-Band)"]
     end
 
     NBI --> SVC --> DEV_SVC
     DEV_SVC --> DF --> CD
+    CD --> PORT
     CD --> CLIENT
     CLIENT --> MODELS
     CD -.-> YANG
 
     CLIENT ===|"RESTCONF HTTP/HTTPS :80/:443\n(2-Phase Commit / Candidate DS)"| T261
     CLIENT ===|"RESTCONF HTTP/HTTPS :80/:443"| EH
-    CLIENT ===|"REST / NETCONF"| IP50
+    CLIENT ===|"RESTCONF /restconf/data"| IP
 ```
 
 ---
@@ -134,13 +136,14 @@ curl -X POST http://<tfs-ip>:8088/api/v1/devices \
 Run the full pytest suite from the repository root:
 
 ```bash
-PYTHONPATH=src pytest -v src/device/tests/test_driver_ceragon.py
+PYTHONPATH=src python -m pytest -v src/device/tests/test_driver_ceragon.py
 ```
 
 ### Detailed Documentation & Specifications
 
 - **Driver Reference & Usage**: [`src/device/service/drivers/ceragon/README.md`](src/device/service/drivers/ceragon/README.md)
 - **Technical Driver Specification**: [`docs/CERAGON_DRIVER_SPECIFICATION.md`](docs/CERAGON_DRIVER_SPECIFICATION.md)
+- **Master Specification**: [`docs/CERAGON_TERAFLOWSDN_MASTER_SPECIFICATION.md`](docs/CERAGON_TERAFLOWSDN_MASTER_SPECIFICATION.md)
 - **Contribution Guide**: [`docs/ETSI_TFS_CONTRIBUTION_GUIDE.md`](docs/ETSI_TFS_CONTRIBUTION_GUIDE.md)
 
 ---

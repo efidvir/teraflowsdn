@@ -95,3 +95,74 @@ def build_acm_floor_hardening_payload(
             "snr-hysteresis-db": target_snr_threshold_db,
         }
     }
+
+
+def build_config_payload(
+    config_type: str,
+    parameters: Dict[str, Any],
+    api_flavor: str = "siklu_tg",
+) -> Dict[str, Any]:
+    """Build RFC 8040 RESTCONF payload for any of the 12 Ceragon control domains."""
+    ctype = (config_type or "").lower()
+    if api_flavor == "ceraos":
+        domain_map = {
+            "radio_tuning": ("ceragon-radio-link:radio-link-cfg", parameters),
+            "acm": ("ceragon-radio-link:radio-link-cfg", {"acm": parameters}),
+            "modulation": ("ceragon-radio-link:radio-link-cfg", {"acm": parameters}),
+            "qos": ("ceragon-qos:qos-config", parameters),
+            "slice": ("ceragon-slice:slice-config", parameters),
+            "protection": ("ceragon-protection:protection-config", parameters),
+            "multiband": ("ceragon-multiband:multiband-config", parameters),
+            "sync": ("ceragon-sync:sync-config", parameters),
+            "security": ("ceragon-macsec:macsec-config", parameters),
+            "energy": ("ceragon-radio-link:radio-link-cfg", {"green-mode": parameters}),
+            "oran_xhaul": ("ceragon-oran-xhaul:oran-xhaul-config", parameters),
+            "interference": ("ceragon-radio-link:radio-link-cfg", {"xpic": parameters}),
+        }
+        mod_key, body = domain_map.get(ctype, ("ceragon-radio-link:radio-link-cfg", parameters))
+        return {mod_key: body}
+
+    if ctype == "radio_tuning":
+        return build_radio_tuning_payload(
+            frequency_mhz=parameters.get("frequency_mhz"),
+            channel_id=parameters.get("channel_id"),
+            tx_power_dbm=parameters.get("tx_power_dbm"),
+            atpc_enabled=parameters.get("atpc_enabled"),
+            min_mcs_floor=parameters.get("min_mcs_floor"),
+        )
+    if ctype in ("slice", "vlan"):
+        return build_vlan_slice_payload(
+            vlan_id=int(parameters.get("vlan_id", 100)),
+            slice_name=str(parameters.get("slice_name", "slice-1")),
+            bandwidth_mbps=int(parameters.get("bandwidth_mbps", 1000)),
+        )
+    if ctype in ("acm", "modulation"):
+        return build_acm_floor_hardening_payload(
+            min_modulation=str(parameters.get("min_modulation", "64QAM"))
+        )
+    if ctype == "beamforming":
+        return {"radio-bridge-tg-radio-dn:radio-dn": parameters}
+    if ctype == "protection":
+        return {"radio-bridge-tg-bond:bond": parameters}
+    if ctype == "sync":
+        return {"radio-bridge-tg-gps:gps": parameters}
+    return {f"radio-bridge-tg:{ctype or 'config'}": parameters}
+
+
+def build_delete_uri(
+    config_type: str,
+    parameters: Dict[str, Any],
+    api_flavor: str = "siklu_tg",
+) -> str:
+    """Build RFC 8040 RESTCONF resource URI for deleting a domain configuration."""
+    ctype = (config_type or "").lower()
+    if api_flavor == "ceraos":
+        if ctype in ("slice", "vlan"):
+            sid = parameters.get("slice_id") or parameters.get("slice_name") or "slice-1"
+            return f"/restconf/data/ceragon-slice:slice-config/slices/slice={sid}"
+        return "/restconf/data/ceragon-radio-link:radio-link-cfg"
+    if ctype in ("slice", "vlan"):
+        vid = parameters.get("vlan_id", 100)
+        return f"/restconf/ds/ietf-datastores:candidate/ietf-interfaces:interfaces/interface=eth1.{vid}"
+    return "/restconf/ds/ietf-datastores:candidate/radio-bridge-tg-radio-common:radio-common"
+

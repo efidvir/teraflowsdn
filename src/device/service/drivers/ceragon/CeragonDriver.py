@@ -25,7 +25,18 @@ import logging
 import threading
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from common.method_wrappers.Decorator import MetricsPool, metered_subclass_method
+try:
+    from common.method_wrappers.Decorator import MetricsPool, metered_subclass_method
+except ModuleNotFoundError:
+    class MetricsPool:  # type: ignore[no-redef]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+    def metered_subclass_method(_pool: Any) -> Any:  # type: ignore[no-redef]
+        def _decorator(fn: Any) -> Any:
+            return fn
+        return _decorator
+
 from device.service.driver_api._Driver import RESOURCE_ENDPOINTS, _Driver
 from .client import CeragonRestClient
 from .models import CeragonDeviceState
