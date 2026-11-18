@@ -15,12 +15,16 @@
 """
 Config rules for one Ceragon radio on a service path
 ====================================================
-A radio hop carries an L2 or L3 service as a VLAN bridge between its Ethernet
-port and its radio sector. The fixed rules:
+A radio hop carries a service between its Ethernet port and its radio sector.
+The fixed rules:
 
-* VLAN: the endpoint's own settings, else the service settings, else the VLAN
-  used at the service's access points (``vlan_id`` for L2VPN, ``vlan_tag`` for
-  L3VPN). A service without any VLAN is rejected.
+* Tagged services get their own VLAN bridge (a slice). The VLAN is the radio
+  endpoint's own setting, else ``vlan_id`` in the service settings, else, for
+  L2 services only, the VLAN used at the service's access points. An L3
+  service's access VLAN is not used: the routers on each side terminate it,
+  and the radio carries the link between them as it arrives.
+* Without a VLAN, the service rides the radio's default bridge and no slice is
+  written.
 * Bandwidth: ``bandwidth_mbps`` in the service settings, else the SLA capacity
   constraint, else left to the radio.
 * Radio and ACM settings: taken from the service settings keys ``radio`` and
@@ -91,7 +95,7 @@ def radio_endpoints(endpoint_names: Iterable[str]) -> List[str]:
 
 
 def compose_setup_rules(
-    service_uuid: str, slice_name: str, vlan_id: int, bandwidth_mbps: Optional[int],
+    service_uuid: str, slice_name: str, vlan_id: Optional[int], bandwidth_mbps: Optional[int],
     endpoint_names: List[str], service_settings: Optional[Dict[str, Any]],
 ) -> List[Dict]:
     rules: List[Dict] = []
@@ -104,6 +108,8 @@ def compose_setup_rules(
         if acm:
             rules.append(json_config_rule_set(ACM_KEY_TEMPLATE.format(name), acm))
 
+    if vlan_id is None:  # untagged: the default bridge carries it
+        return rules
     slice_value: Dict[str, Any] = {
         "vlan_id": int(vlan_id),
         "slice_name": slice_name,
@@ -119,7 +125,9 @@ def compose_setup_rules(
 def compose_teardown_rules(
     service_uuid: str, slice_name: str, vlan_id: Optional[int], endpoint_names: List[str],
 ) -> List[Dict]:
-    value: Dict[str, Any] = {"slice_name": slice_name, "endpoints": list(endpoint_names), "service_uuid": service_uuid}
-    if vlan_id is not None:
-        value["vlan_id"] = int(vlan_id)
+    if vlan_id is None:  # nothing was written for an untagged service
+        return []
+    value: Dict[str, Any] = {
+        "vlan_id": int(vlan_id), "slice_name": slice_name, "endpoints": list(endpoint_names), "service_uuid": service_uuid,
+    }
     return [json_config_rule_delete(SLICE_KEY_TEMPLATE.format(service_uuid), value)]

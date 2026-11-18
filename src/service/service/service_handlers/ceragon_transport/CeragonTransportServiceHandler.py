@@ -20,9 +20,10 @@ so services created through the IETF Network Slice (RFC 9543), L2VPN
 (RFC 8466) or L3VPN (RFC 8299) interfaces reach the radios on their path.
 
 TeraFlowSDN hands this handler the endpoints of each radio on a connection
-(an Ethernet port and a radio sector per device). For each device it writes
-one transport slice (a VLAN bridge between those endpoints) plus the radio and
-ACM settings carried in the service settings. See ConfigRules.py for the rules.
+(an Ethernet port and a radio sector per device). For each device it writes a
+transport slice (a VLAN bridge between those endpoints) when the service is
+tagged on the radio, plus the radio and ACM settings carried in the service
+settings. See ConfigRules.py for the rules.
 """
 from __future__ import annotations
 
@@ -32,7 +33,7 @@ import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from common.method_wrappers.Decorator import MetricsPool, metered_subclass_method
-from common.proto.context_pb2 import ConfigRule, DeviceId, Service
+from common.proto.context_pb2 import ConfigRule, DeviceId, Service, ServiceTypeEnum
 from common.tools.object_factory.Device import json_device_id
 from common.type_checkers.Checkers import chk_type
 from service.service.service_handler_api._ServiceHandler import _ServiceHandler
@@ -81,6 +82,17 @@ class CeragonTransportServiceHandler(_ServiceHandler):
                 return float(constraint.sla_capacity.capacity_gbps)
         return None
 
+    def _resolve_vlan(self, device_obj, endpoint_objs, service_settings) -> Optional[int]:
+        endpoint_settings = []
+        for endpoint_obj in endpoint_objs:
+            node = self.__settings_handler.get_endpoint_settings(device_obj, endpoint_obj)
+            endpoint_settings.append(node.value if node is not None else None)
+        # Explicit VLAN settings only: an L3 service's access VLAN ends at the routers.
+        explicit = {k: v for k, v in service_settings.items() if k == 'vlan_id'}
+        is_l2 = self.__service.service_type == ServiceTypeEnum.SERVICETYPE_L2NM
+        access_points = self._access_point_settings() if is_l2 else []
+        return resolve_vlan(endpoint_settings, explicit, access_points)
+
     def _slice_name(self) -> str:
         return self.__service.name or self.__service.service_id.service_uuid.uuid
 
@@ -128,14 +140,10 @@ class CeragonTransportServiceHandler(_ServiceHandler):
         bandwidth_mbps = resolve_bandwidth_mbps(service_settings, self._capacity_gbps())
 
         def compose(device_obj, endpoint_objs) -> List[Dict]:
-            endpoint_settings = []
-            for endpoint_obj in endpoint_objs:
-                node = self.__settings_handler.get_endpoint_settings(device_obj, endpoint_obj)
-                endpoint_settings.append(node.value if node is not None else None)
-            vlan_id = resolve_vlan(endpoint_settings, service_settings, self._access_point_settings())
+            vlan_id = self._resolve_vlan(device_obj, endpoint_objs, service_settings)
             if vlan_id is None:
-                raise Exception('Service({:s}) has no VLAN for the radio hop: set vlan_id/vlan_tag'.format(
-                    str(service_uuid)))
+                LOGGER.info('Service {:s} is untagged on radio {:s}: default bridge'.format(
+                    str(service_uuid), str(device_obj.name)))
             return compose_setup_rules(
                 service_uuid, self._slice_name(), vlan_id, bandwidth_mbps,
                 [endpoint_obj.name for endpoint_obj in endpoint_objs], service_settings)
@@ -153,11 +161,7 @@ class CeragonTransportServiceHandler(_ServiceHandler):
         service_settings = self._service_settings()
 
         def compose(device_obj, endpoint_objs) -> List[Dict]:
-            endpoint_settings = []
-            for endpoint_obj in endpoint_objs:
-                node = self.__settings_handler.get_endpoint_settings(device_obj, endpoint_obj)
-                endpoint_settings.append(node.value if node is not None else None)
-            vlan_id = resolve_vlan(endpoint_settings, service_settings, self._access_point_settings())
+            vlan_id = self._resolve_vlan(device_obj, endpoint_objs, service_settings)
             return compose_teardown_rules(
                 service_uuid, self._slice_name(), vlan_id, [endpoint_obj.name for endpoint_obj in endpoint_objs])
 

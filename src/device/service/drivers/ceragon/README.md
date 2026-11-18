@@ -101,8 +101,9 @@ Each radio sector as an `iana-if-type:microwaveCarrierTermination` interface in 
 
 `CeragonTransportServiceHandler` is registered for `SERVICETYPE_L2NM` and `SERVICETYPE_L3NM` on `DEVICEDRIVER_CERAGON`. For each radio on a connection it writes:
 
-* `/slice[<service_uuid>]` with the VLAN and the endpoints of that radio on the path. The VLAN comes from the endpoint settings, else the service settings, else the VLAN used at the service's access points (`vlan_id` for L2VPN, `vlan_tag` for L3VPN). A service without a VLAN is rejected.
-* the bandwidth from `bandwidth_mbps` in the service settings, else the SLA capacity constraint;
+* `/slice[<service_uuid>]`, a VLAN bridge between that radio's endpoints on the path, when the service is tagged on the radio. The VLAN is the radio endpoint's own setting, else `vlan_id` in the service settings, else (L2 services only) the VLAN used at the service's access points. An L3 service's access VLAN is not used, because the routers on each side terminate it; the radio carries the router-to-router link as it arrives.
+* nothing for an untagged service: it rides the radio's default bridge;
+* the slice bandwidth from `bandwidth_mbps` in the service settings, else the SLA capacity constraint;
 * `/interface[name=rf-sector-<n>]/radio` and `/acm` when the service settings carry `radio` / `acm` objects. Only the documented parameters pass.
 
 Teardown removes the slice and leaves radio settings in place.

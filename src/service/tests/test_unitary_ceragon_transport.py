@@ -15,10 +15,10 @@
 """
 Unit tests for the Ceragon transport service handler
 ====================================================
-An L3VPN between two site routers crosses a pair of Ceragon radios. The
-handler gets the radio endpoints of the connection and must write, per radio,
-one VLAN bridge on the VLAN used at the sites, plus the radio and ACM settings
-from the service settings.
+L2 and L3 services cross a pair of Ceragon radios. The handler gets the radio
+endpoints of the connection and writes, per radio, a VLAN bridge when the
+service is tagged on the radio, plus the radio and ACM settings from the
+service settings. Untagged services ride the radio's default bridge.
 """
 from __future__ import annotations
 
@@ -118,32 +118,40 @@ def test_handler_is_selected_for_l2nm_and_l3nm_on_ceragon_radios():
         assert handler_class is CeragonTransportServiceHandler
 
 
-def test_l3vpn_crossing_two_radios(executor):
-    settings = {
-        "address_families": ["IPV4"],
-        "radio": {"frequency_mhz": 62640, "atpc_enabled": True, "not_a_radio_parameter": 1},
-        "acm": {"min_modulation": "MCS4"},
-    }
-    handler = CeragonTransportServiceHandler(_l3vpn(settings), executor)
+RADIO_SETTINGS = {
+    "radio": {"frequency_mhz": 62640, "atpc_enabled": True, "not_a_radio_parameter": 1},
+    "acm": {"min_modulation": "MCS4"},
+}
+
+
+def test_l3vpn_rides_the_default_bridge_and_gets_radio_settings(executor):
+    # The sites use VLAN 300, but the routers terminate it: the radio carries the
+    # router-to-router link as it arrives, so no slice is written.
+    handler = CeragonTransportServiceHandler(_l3vpn({"address_families": ["IPV4"], **RADIO_SETTINGS}), executor)
     results = handler.SetEndpoint(list(RADIO_PATH), connection_uuid="conn-1")
     assert results == [True, True, True, True]
     assert [d.device_id.device_uuid.uuid for d in executor.configured] == ["radio-a", "radio-b"]
-
     rules = _rules(executor.configured[0])
-    slice_rule = rules["/slice[svc-l3vpn-1]"]
-    assert slice_rule["action"] == ConfigActionEnum.CONFIGACTION_SET
-    assert slice_rule["value"] == {
-        "vlan_id": 300, "slice_name": "site-a-to-site-b", "bandwidth_mbps": 500,
-        "endpoints": ["eth1", "rf-sector-1"], "service_uuid": "svc-l3vpn-1",
-    }
+    assert "/slice[svc-l3vpn-1]" not in rules
     assert rules["/interface[name=rf-sector-1]/radio"]["value"] == {
         "frequency_mhz": 62640, "atpc_enabled": True, "sector_index": 1,
     }
     assert rules["/interface[name=rf-sector-1]/acm"]["value"] == {"min_modulation": "MCS4"}
 
 
+def test_l3vpn_with_an_explicit_radio_vlan(executor):
+    handler = CeragonTransportServiceHandler(_l3vpn({"vlan_id": 310, **RADIO_SETTINGS}), executor)
+    assert handler.SetEndpoint(list(RADIO_PATH)) == [True, True, True, True]
+    slice_rule = _rules(executor.configured[0])["/slice[svc-l3vpn-1]"]
+    assert slice_rule["action"] == ConfigActionEnum.CONFIGACTION_SET
+    assert slice_rule["value"] == {
+        "vlan_id": 310, "slice_name": "site-a-to-site-b", "bandwidth_mbps": 500,
+        "endpoints": ["eth1", "rf-sector-1"], "service_uuid": "svc-l3vpn-1",
+    }
+
+
 def test_settings_bandwidth_wins_over_the_sla(executor):
-    handler = CeragonTransportServiceHandler(_l3vpn({"bandwidth_mbps": 250}), executor)
+    handler = CeragonTransportServiceHandler(_l3vpn({"vlan_id": 310, "bandwidth_mbps": 250}), executor)
     assert handler.SetEndpoint(list(RADIO_PATH[:2])) == [True, True]
     assert _rules(executor.configured[0])["/slice[svc-l3vpn-1]"]["value"]["bandwidth_mbps"] == 250
 
@@ -158,19 +166,29 @@ def test_l2vpn_service_vlan(executor):
     assert "/interface[name=rf-sector-1]/radio" not in _rules(executor.configured[0])
 
 
-def test_service_without_any_vlan_is_rejected(executor):
+def test_l2vpn_takes_the_vlan_of_its_access_points(executor):
+    service = Service(**json_service_l2nm_planned("svc-l2vpn-2", config_rules=[
+        json_config_rule_set("/device[pe-1]/endpoint[ge-0/0/1]/settings", {"vlan_id": 125}),
+        json_config_rule_set("/settings", {"mtu": 1500}),
+    ]))
+    handler = CeragonTransportServiceHandler(service, executor)
+    assert handler.SetEndpoint(list(RADIO_PATH[:2])) == [True, True]
+    assert _rules(executor.configured[0])["/slice[svc-l2vpn-2]"]["value"]["vlan_id"] == 125
+
+
+def test_untagged_service_without_radio_settings_writes_nothing(executor):
     handler = CeragonTransportServiceHandler(_l3vpn(with_sites=False), executor)
-    results = handler.SetEndpoint(list(RADIO_PATH))
-    assert all(isinstance(r, Exception) for r in results)
-    assert "no VLAN" in str(results[0])
+    assert handler.SetEndpoint(list(RADIO_PATH)) == [True, True, True, True]
+    assert executor.configured == []
+    assert handler.DeleteEndpoint(list(RADIO_PATH)) == [True, True, True, True]
     assert executor.configured == []
 
 
 def test_teardown_removes_only_the_slice(executor):
-    handler = CeragonTransportServiceHandler(_l3vpn({"acm": {"min_modulation": "MCS4"}}), executor)
+    handler = CeragonTransportServiceHandler(_l3vpn({"vlan_id": 310, **RADIO_SETTINGS}), executor)
     assert handler.DeleteEndpoint(list(RADIO_PATH)) == [True, True, True, True]
     for device in executor.configured:
         rules = _rules(device)
         assert list(rules) == ["/slice[svc-l3vpn-1]"]
         assert rules["/slice[svc-l3vpn-1]"]["action"] == ConfigActionEnum.CONFIGACTION_DELETE
-        assert rules["/slice[svc-l3vpn-1]"]["value"]["vlan_id"] == 300
+        assert rules["/slice[svc-l3vpn-1]"]["value"]["vlan_id"] == 310
