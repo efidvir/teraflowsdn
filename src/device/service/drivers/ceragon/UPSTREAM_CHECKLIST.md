@@ -26,3 +26,20 @@ What a merge request to ETSI TeraFlowSDN would contain, and what has to happen b
 * Used capacity (`LINK_USED_CAPACITY_GBPS`) is derived from Ethernet ingress counters per device, not per radio link.
 * Links between radios are added with TFS link descriptors; the driver does not create them from the active-link table.
 * On MultiHaul TG the slice's bridge ID is derived from the VLAN (`(vlan - 1) % 63 + 2`) unless `bridge_id` is given, so two VLANs 63 apart collide.
+
+## Running the tests in CI
+
+This fork ignores `.github/` (upstream TeraFlowSDN uses GitLab CI), so there is no workflow file. The two jobs to run, on Python 3.11:
+
+```bash
+# Driver: needs only requests and pytest (no compiled protos)
+pip install requests pytest
+cd src && python -m pytest device/tests/test_driver_ceragon.py -q
+
+# Service handler: compile the protos first
+pip install grpcio grpcio-tools grpclib protobuf prettytable prometheus-client anytree netaddr deepdiff pytest
+bash proto/generate_code_python.sh
+cd src && PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python python -m pytest service/tests/test_unitary_ceragon_transport.py -q
+```
+
+For the upstream merge request, the same tests go into the device and service jobs of upstream's `.gitlab-ci.yml`.
