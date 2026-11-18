@@ -269,7 +269,7 @@ _CATALOG: List[ProductSpec] = [
     ProductSpec("MH-T261", "MultiHaul TG", "MultiHaul TG", FLAVOR_SIKLU_TG, (V_BAND,), 1.0, "ptmp", "TDD",
                 "all-outdoor", 1, "16QAM", (2160,), _f(F_BEAMFORMING, F_MESH, F_SYNC, F_SECURITY),
                 aliases=("T261", "TG-T261"), api_verified=True,
-                notes="Terminal unit; RESTCONF candidate DS verified in lab (192.168.1.225)."),
+                notes="Terminal unit; RESTCONF candidate DS verified in the lab."),
     ProductSpec("MH-T260", "MultiHaul TG", "MultiHaul TG", FLAVOR_SIKLU_TG, (V_BAND,), 1.0, "ptmp", "TDD",
                 "all-outdoor", 1, "16QAM", (2160,), _f(F_BEAMFORMING, F_MESH, F_SYNC, F_SECURITY),
                 aliases=("T260",)),

@@ -27,6 +27,7 @@ from .l3nm_ietfslice.L3NM_IETFSlice_ServiceHandler import L3NM_IETFSlice_Service
 from .l3nm_ncefan.L3NM_NCEFAN_ServiceHandler import L3NM_NCEFAN_ServiceHandler
 from .l3nm_openconfig.L3NMOpenConfigServiceHandler import L3NMOpenConfigServiceHandler
 from .microwave.MicrowaveServiceHandler import MicrowaveServiceHandler
+from .ceragon_transport.CeragonTransportServiceHandler import CeragonTransportServiceHandler
 from .p4_dummy_l1.p4_dummy_l1_service_handler import P4DummyL1ServiceHandler
 from .p4_fabric_tna_int.p4_fabric_tna_int_service_handler import P4FabricINTServiceHandler
 from .p4_fabric_tna_l2_simple.p4_fabric_tna_l2_simple_service_handler import P4FabricL2SimpleServiceHandler
@@ -125,6 +126,15 @@ SERVICE_HANDLERS = [
                 DeviceDriverEnum.DEVICEDRIVER_IETF_NETWORK_TOPOLOGY,
                 DeviceDriverEnum.DEVICEDRIVER_ONF_TR_532
             ],
+        }
+    ]),
+    (CeragonTransportServiceHandler, [
+        {
+            FilterFieldEnum.SERVICE_TYPE  : [
+                ServiceTypeEnum.SERVICETYPE_L2NM,
+                ServiceTypeEnum.SERVICETYPE_L3NM,
+            ],
+            FilterFieldEnum.DEVICE_DRIVER : DeviceDriverEnum.DEVICEDRIVER_CERAGON,
         }
     ]),
     (P4DummyL1ServiceHandler, [
