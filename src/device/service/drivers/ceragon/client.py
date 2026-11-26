@@ -547,9 +547,9 @@ class CeragonRestClient:
             sec_idx = int(raw_idx) if str(raw_idx).isdigit() else idx
             rsl = float(car["rsl-dbm"]) if "rsl-dbm" in car and car["rsl-dbm"] is not None else None
             tsl = float(car["tsl-dbm"]) if "tsl-dbm" in car and car["tsl-dbm"] is not None else None
-            snr = float(car["snr-db"]) if "snr-db" in car and car["snr-db"] is not None else (
-                -float(car["mse-db"]) if "mse-db" in car and car["mse-db"] is not None else None
-            )
+            snr = float(car["snr-db"]) if "snr-db" in car and car["snr-db"] is not None else None
+            mse = float(car["mse-db"]) if "mse-db" in car and car["mse-db"] is not None else None
+            xpi = float(car["xpi-db"]) if "xpi-db" in car and car["xpi-db"] is not None else None
             mod = car.get("current-modulation")
             cap = float(car["current-capacity-mbps"]) if "current-capacity-mbps" in car and car["current-capacity-mbps"] is not None else None
 
@@ -566,6 +566,8 @@ class CeragonRestClient:
                 rsl_dbm=rsl,
                 tsl_dbm=tsl,
                 snr_db=snr,
+                mse_db=mse,
+                xpi_db=xpi,
             ))
             if rsl is not None or cap is not None:
                 active_links.append(RadioLinkState(
@@ -1424,6 +1426,20 @@ class CeragonRestClient:
                 parsed.append(self.parse_event_string(idx, raw))
         return parsed
 
+    def fetch_pm_bins(self, carrier_id: int = 1, period_type: str = "fifteen-min") -> List[Dict[str, Any]]:
+        """CeraOS RF PM bins of one carrier (ceragon-pm-telemetry:get-pm-bins)."""
+        ok, out = self.invoke_rpc(
+            "ceragon-pm-telemetry:get-pm-bins",
+            {"carrier-id": int(carrier_id), "period-type": period_type},
+        )
+        if ok and isinstance(out, dict):
+            return (
+                out.get("ceragon-pm-telemetry:output", {}).get("bins")
+                or out.get("output", {}).get("bins")
+                or []
+            )
+        return []
+
     def fetch_pm_items(self, item_type: str = "rf", period_type: str = "quarter") -> List[Dict[str, Any]]:
         """
         Fetch 15-minute ('quarter') or 24-hour ('day') Performance Monitoring (PM) intervals:
@@ -1435,17 +1451,7 @@ class CeragonRestClient:
 
         if self._device_flavor == "ceraos":
             cera_period = "fifteen-min" if period_type == "quarter" else "twenty-four-hour"
-            ok, out = self.invoke_rpc(
-                "ceragon-pm-telemetry:get-pm-bins",
-                {"carrier-id": 1, "period-type": cera_period},
-            )
-            if ok and isinstance(out, dict):
-                return (
-                    out.get("ceragon-pm-telemetry:output", {}).get("bins")
-                    or out.get("output", {}).get("bins")
-                    or []
-                )
-            return []
+            return self.fetch_pm_bins(carrier_id=1, period_type=cera_period)
 
         ok, out = self.invoke_rpc(
             "radio-bridge-tg-pm:get-pm-items",

@@ -58,9 +58,27 @@ Read from the live datastore, in the `('/endpoints/endpoint[<uuid>]', {...})` fo
 | Endpoint | Source | Type | KPI sample types |
 | :--- | :--- | :--- | :--- |
 | `eth1`, `eth2`, ... | traffic ports (host, RF, bond and tunnel interfaces are skipped) | `ethernet-<speed>` | `BYTES_TRANSMITTED`, `BYTES_RECEIVED` |
-| `rf-sector-<n>` | radio sectors / carriers | `radio-v-band`, `radio-e-band`, `radio-mw` | `LINK_TOTAL_CAPACITY_GBPS`, `LINK_USED_CAPACITY_GBPS` |
+| `rf-sector-<n>` | radio sectors / carriers | `radio-v-band`, `radio-e-band`, `radio-mw` | `LINK_TOTAL_CAPACITY_GBPS`, `LINK_USED_CAPACITY_GBPS`, and the radio KPIs of the product family (below) |
 
 Monitoring keys follow the TFS convention `/endpoints/endpoint[<uuid>]/state/<kpi_name>`.
+
+#### Radio KPIs
+
+Each radio endpoint offers the figures its product family's API reports. A sample carries the value the device reported at that poll, and a poll where the device leaves a figure out produces no sample for it.
+
+| KPI sample type | Value | MultiHaul TG | EtherHaul | CeraOS (IP-20/50/100) |
+| :--- | :--- | :--- | :--- | :--- |
+| `RADIO_RX_LEVEL_DBM` (801) | received signal level, dBm | link `rssi` | `rssi-dbm` | carrier `rsl-dbm` |
+| `RADIO_TX_LEVEL_DBM` (802) | transmitted signal level, dBm | | | carrier `tsl-dbm` |
+| `RADIO_SNIR_DB` (803) | signal to noise plus interference ratio, dB | link `snr` | `cinr-db` | carrier `snr-db` |
+| `RADIO_MSE_DB` (804) | modem mean square error, dB | | | carrier `mse-db` |
+| `RADIO_XPI_DB` (805) | cross-polarization interference, dB | | | carrier `xpi-db` |
+| `RADIO_TX_MODULATION_ORDER` (806) | constellation size of the transmit modulation | from `mcs-tx` (802.11ad single-carrier set) | `actual-tx-modulation` | `current-modulation` |
+| `RADIO_TX_MCS_INDEX`, `RADIO_RX_MCS_INDEX` (807, 808) | MCS index in use | link `mcs-tx`, `mcs-rx` | | |
+| `RADIO_TX_PER_PERCENT`, `RADIO_RX_PER_PERCENT` (809, 810) | packet error rate, % | link `tx-per`, `rx-per` | | |
+| `RADIO_ERRORED_SECONDS` … `RADIO_BACKGROUND_BLOCK_ERRORS` (811–814) | ES, SES, UAS and BBE of the last completed 15-minute interval | | | `get-pm-bins` |
+
+The error performance counters are sampled once per interval and stamped with the interval's end. Only the MultiHaul MH-T261 has been verified against a real device; the EtherHaul and CeraOS columns follow the APIs as this driver models them.
 
 ### Device configuration (`GetInitialConfig()`)
 `/device/hardware_info`, `/device/capabilities`, `/radio/sector[<n>]` and `/microwave-radio-link`. All values are JSON objects. These keys are read-only: writing them back is a no-op, so a device update never re-tunes a radio from stored state.

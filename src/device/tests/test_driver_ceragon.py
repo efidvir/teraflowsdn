@@ -26,6 +26,7 @@ import copy
 import json
 import sys
 import threading
+import time
 import types
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -51,6 +52,7 @@ RUNNING = f"{BASE}/restconf/ds/ietf-datastores:running"
 CERAOS_DATA = f"{BASE}/restconf/data"
 COMMIT = f"{BASE}/restconf/operations/ietf-netconf:commit"
 DISCARD = f"{BASE}/restconf/operations/ietf-netconf:discard-changes"
+PM_BINS = f"{BASE}/restconf/operations/ceragon-pm-telemetry:get-pm-bins"
 
 TG_DATASTORE: Dict[str, Any] = {
     "radio-bridge-tg-system:system": {"name": "node-a", "state": {"product": "MH-T261", "uptime": "1d"}},
@@ -120,6 +122,7 @@ class FakeDevice:
         self.auth_ok = auth_ok
         self.commit_ok = commit_ok
         self.datastore = copy.deepcopy(TG_DATASTORE if flavor == "terragraph" else CERAOS_DATASTORE)
+        self.pm_bins: List[Dict[str, Any]] = []
         self.calls: List[Tuple[str, str, Any]] = []
         self.closed = False
 
@@ -146,6 +149,8 @@ class FakeDevice:
         self.calls.append(("POST", url, json))
         if url == COMMIT and not self.commit_ok:
             return FakeResponse(url, 500, {"error": "commit rejected"})
+        if url == PM_BINS and self.flavor == "ceraos":
+            return FakeResponse(url, 200, {"ceragon-pm-telemetry:output": {"bins": self.pm_bins}})
         return FakeResponse(url, 204)
 
     def delete(self, url: str, timeout: Any = None, **_: Any) -> FakeResponse:
@@ -228,9 +233,17 @@ def test_endpoints_come_from_the_live_datastore(tg):
     }
     radio = resources["/endpoints/endpoint[rf-sector-1]"]
     assert radio["type"] == "radio-v-band"
-    assert radio["sample_types"] == {
-        301: "/endpoints/endpoint[rf-sector-1]/state/link_total_capacity_gbps",
-        302: "/endpoints/endpoint[rf-sector-1]/state/link_used_capacity_gbps",
+    state = "/endpoints/endpoint[rf-sector-1]/state/"
+    assert radio["sample_types"] == {   # what the MultiHaul TG API reports per sector
+        301: state + "link_total_capacity_gbps",
+        302: state + "link_used_capacity_gbps",
+        801: state + "radio_rx_level_dbm",
+        803: state + "radio_snir_db",
+        806: state + "radio_tx_modulation_order",
+        807: state + "radio_tx_mcs_index",
+        808: state + "radio_rx_mcs_index",
+        809: state + "radio_tx_per_percent",
+        810: state + "radio_rx_per_percent",
     }
 
 
@@ -374,6 +387,82 @@ def test_delete_removes_the_slice_and_keeps_radio_settings(tg):
 KEY_TOTAL = "/endpoints/endpoint[rf-sector-1]/state/link_total_capacity_gbps"
 KEY_USED = "/endpoints/endpoint[rf-sector-1]/state/link_used_capacity_gbps"
 KEY_ETH_RX = "/endpoints/endpoint[eth1]/state/bytes_received"
+RADIO_KEY = "/endpoints/endpoint[rf-sector-1]/state/radio_{:s}"
+
+
+def radio_keys(*names: str) -> List[str]:
+    return [RADIO_KEY.format(name) for name in names]
+
+
+def test_radio_figures_on_terragraph(tg):
+    driver, _ = tg
+    names = ("rx_level_dbm", "snir_db", "tx_mcs_index", "rx_mcs_index", "tx_modulation_order",
+             "tx_level_dbm", "mse_db")
+    values = {key: value for _, key, value in driver.collect_samples(radio_keys(*names))}
+    assert values == {
+        RADIO_KEY.format("rx_level_dbm"): -45.5,       # link rssi
+        RADIO_KEY.format("snir_db"): 21.0,             # link snr
+        RADIO_KEY.format("tx_mcs_index"): 9,
+        RADIO_KEY.format("rx_mcs_index"): 9,
+        RADIO_KEY.format("tx_modulation_order"): 4,    # 802.11ad MCS 9 is pi/2-QPSK
+    }                                                  # no TX level or MSE: the API reports neither
+    assert isinstance(values[RADIO_KEY.format("tx_mcs_index")], int)
+
+
+def test_radio_figures_on_ceraos(ceraos):
+    driver, _ = ceraos
+    names = ("rx_level_dbm", "tx_level_dbm", "mse_db", "snir_db", "xpi_db", "tx_modulation_order")
+    values = {key: value for _, key, value in driver.collect_samples(radio_keys(*names))}
+    assert values == {
+        RADIO_KEY.format("rx_level_dbm"): -40.2,
+        RADIO_KEY.format("tx_level_dbm"): 18.0,
+        RADIO_KEY.format("mse_db"): -38.0,
+        RADIO_KEY.format("tx_modulation_order"): 1024,
+    }                                                  # SNIR and XPI are not reported by this carrier
+
+
+def test_ceraos_mse_is_reported_as_mse(ceraos):
+    driver, _ = ceraos
+    view = dict(driver.GetConfig(["/microwave-radio-link"]))["/microwave-radio-link"]
+    (carrier,) = view["ietf-interfaces:interfaces"]["interface"]
+    assert "actual-snir" not in carrier["ietf-microwave-radio-link:radio-performance"]
+
+
+def test_ceraos_endpoint_advertises_radio_figures_and_pm_counters(ceraos):
+    driver, _ = ceraos
+    radio = dict(driver.GetConfig([RESOURCE_ENDPOINTS]))["/endpoints/endpoint[rf-sector-1]"]
+    assert set(radio["sample_types"]) == {301, 302, 801, 802, 803, 804, 805, 806, 811, 812, 813, 814}
+
+
+def test_pm_counters_report_the_last_completed_interval_once(ceraos):
+    driver, device = ceraos
+    now = time.time()
+    closed_start = (now // 900) * 900 - 900            # the quarter that ended at the last boundary
+    open_start = closed_start + 900                     # the quarter still running
+    iso = lambda t: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))  # noqa: E731
+    device.pm_bins = [
+        {"bin-index": 0, "period-type": "fifteen-min", "start-time": iso(open_start), "errored-seconds": 1},
+        {"bin-index": 1, "period-type": "fifteen-min", "start-time": iso(closed_start), "errored-seconds": 4,
+         "severely-errored-seconds": 1, "unavailable-seconds": 0, "background-block-errors": 37},
+        {"bin-index": 2, "period-type": "fifteen-min", "start-time": iso(closed_start - 900), "errored-seconds": 9,
+         "validity": False},
+    ]
+    keys = radio_keys("errored_seconds", "severely_errored_seconds", "unavailable_seconds",
+                      "background_block_errors")
+    first = driver.collect_samples(keys)
+    assert {key: value for _, key, value in first} == dict(zip(keys, [4, 1, 0, 37]))
+    assert {ts for ts, _, _ in first} == {closed_start + 900}   # stamped with the interval's end
+    assert [c for c in device.calls if c[1] == PM_BINS][0][2] == {
+        "ceragon-pm-telemetry:input": {"carrier-id": 1, "period-type": "fifteen-min"},
+    }
+    assert driver.collect_samples(keys) == []          # the same interval is reported once
+
+
+def test_mcs_modulation_follows_the_80211ad_single_carrier_set():
+    from device.service.drivers.ceragon.Tools import coding_modulation_identity, mcs_modulation_order
+    assert [mcs_modulation_order(m) for m in (1, 5, 6, 9, 10, 12, 13)] == [2, 2, 4, 4, 16, 16, None]
+    assert coding_modulation_identity("MCS-5") == "ietf-microwave-types:bpsk"
+    assert coding_modulation_identity("MCS-6") == "ietf-microwave-types:qpsk"
 
 
 def test_subscribe_rejects_unknown_keys(tg):
