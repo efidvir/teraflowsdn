@@ -54,8 +54,9 @@ from .portfolio import ProductSpec
 from .routing import apply_rule, delete_rule
 from .Tools import (
     KPI_BYTES_RECEIVED, KPI_BYTES_TRANSMITTED, KPI_LINK_TOTAL_CAPACITY_GBPS, KPI_LINK_USED_CAPACITY_GBPS,
-    MONITOR_KEY_RE, RESOURCE_RFC8561, compose_endpoints, compose_initial_config, compose_rfc8561_view,
-    endpoint_counter, ethernet_ingress_octets, is_radio_endpoint, metric_to_kpi, sector_capacity_gbps,
+    MONITOR_KEY_RE, RADIO_PM_SAMPLE_TYPES, RESOURCE_RFC8561, compose_endpoints, compose_initial_config,
+    compose_rfc8561_view, endpoint_counter, ethernet_ingress_octets, is_radio_endpoint, last_completed_pm_bin,
+    metric_to_kpi, radio_figure, sector_capacity_gbps, sector_index_of,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -88,6 +89,7 @@ class CeragonDriver(_Driver):
         self.__samples: "queue.Queue[Tuple[float, str, Any]]" = queue.Queue()
         self.__sampler: Optional[threading.Thread] = None
         self.__last_ingress: Optional[Tuple[float, int]] = None
+        self.__pm_emitted: Dict[str, float] = {}   # PM key -> end of the interval last reported
 
     # ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -325,22 +327,51 @@ class CeragonDriver(_Driver):
         state = self._refresh_state()
         timestamp = time.time()
         used_gbps = self._used_capacity_gbps(state, timestamp)
+        pm_bins: Dict[int, List[Dict[str, Any]]] = {}
         samples: List[Tuple[float, str, Any]] = []
         for key in resource_keys:
             m = MONITOR_KEY_RE.match(key)
             if m is None:
                 continue
             endpoint, kpi = m.group("endpoint"), metric_to_kpi(m.group("metric"))
-            value: Optional[float] = None
+            value: Optional[Union[int, float]] = None
             if kpi in (KPI_BYTES_TRANSMITTED, KPI_BYTES_RECEIVED):
                 value = endpoint_counter(state, endpoint, kpi)
-            elif kpi == KPI_LINK_TOTAL_CAPACITY_GBPS and is_radio_endpoint(endpoint):
-                value = sector_capacity_gbps(state, int(endpoint.rsplit("-", 1)[-1]))
-            elif kpi == KPI_LINK_USED_CAPACITY_GBPS and is_radio_endpoint(endpoint):
+            elif kpi is None or not is_radio_endpoint(endpoint):
+                continue
+            elif kpi == KPI_LINK_TOTAL_CAPACITY_GBPS:
+                value = sector_capacity_gbps(state, sector_index_of(endpoint))
+            elif kpi == KPI_LINK_USED_CAPACITY_GBPS:
                 value = used_gbps
+            elif kpi in RADIO_PM_SAMPLE_TYPES:
+                sample = self._pm_sample(key, kpi, sector_index_of(endpoint), timestamp, pm_bins)
+                if sample is not None:
+                    samples.append(sample)
+                continue
+            else:
+                value = radio_figure(state, sector_index_of(endpoint), kpi)
             if value is not None:
                 samples.append((timestamp, key, value))
         return samples
+
+    def _pm_sample(
+        self, key: str, kpi: int, sector_index: int, now: float, pm_bins: Dict[int, List[Dict[str, Any]]]
+    ) -> Optional[Tuple[float, str, int]]:
+        """
+        The count of the last completed PM interval, stamped with the interval's end and
+        reported once per interval. The bins are read once per poll and per carrier.
+        """
+        if sector_index not in pm_bins:
+            pm_bins[sector_index] = self._client.fetch_pm_bins(carrier_id=sector_index)
+        completed = last_completed_pm_bin(pm_bins[sector_index], now)
+        if completed is None:
+            return None
+        end, pm_bin = completed
+        raw = pm_bin.get(RADIO_PM_SAMPLE_TYPES[kpi])
+        if raw is None or self.__pm_emitted.get(key) == end:
+            return None
+        self.__pm_emitted[key] = end
+        return (end, key, int(raw))
 
     def _used_capacity_gbps(self, state: CeragonDeviceState, timestamp: float) -> Optional[float]:
         """

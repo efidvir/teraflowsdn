@@ -63,7 +63,9 @@ class RadioSector:
     current_modulation: Optional[str] = None
     rsl_dbm: Optional[float] = None
     tsl_dbm: Optional[float] = None
-    snr_db: Optional[float] = None
+    snr_db: Optional[float] = None      # as the device reports it (SNR or CINR)
+    mse_db: Optional[float] = None
+    xpi_db: Optional[float] = None
 
     @property
     def frequency_ghz(self) -> float:

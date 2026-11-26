@@ -41,6 +41,24 @@ enum KpiSampleType {
 
     KPISAMPLETYPE_SERVICE_LATENCY_MS            = 701;
 
+    // Radio link KPIs, reported per radio endpoint (one microwave or mmWave carrier).
+    // The levels and ratios are the radio-performance figures of RFC 8561; the error
+    // performance counters follow ITU-T G.826 and cover the last completed PM interval.
+    KPISAMPLETYPE_RADIO_RX_LEVEL_DBM             = 801;  // received signal level
+    KPISAMPLETYPE_RADIO_TX_LEVEL_DBM             = 802;  // transmitted signal level
+    KPISAMPLETYPE_RADIO_SNIR_DB                  = 803;  // signal to noise plus interference ratio
+    KPISAMPLETYPE_RADIO_MSE_DB                   = 804;  // modem mean square error
+    KPISAMPLETYPE_RADIO_XPI_DB                   = 805;  // cross-polarization interference
+    KPISAMPLETYPE_RADIO_TX_MODULATION_ORDER      = 806;  // constellation size in use: 4 for QPSK, 256 for 256-QAM
+    KPISAMPLETYPE_RADIO_TX_MCS_INDEX             = 807;  // on radios that report an MCS, e.g. IEEE 802.11ad/ay
+    KPISAMPLETYPE_RADIO_RX_MCS_INDEX             = 808;
+    KPISAMPLETYPE_RADIO_TX_PER_PERCENT           = 809;  // packet error rate
+    KPISAMPLETYPE_RADIO_RX_PER_PERCENT           = 810;
+    KPISAMPLETYPE_RADIO_ERRORED_SECONDS          = 811;
+    KPISAMPLETYPE_RADIO_SEVERELY_ERRORED_SECONDS = 812;
+    KPISAMPLETYPE_RADIO_UNAVAILABLE_SECONDS      = 813;
+    KPISAMPLETYPE_RADIO_BACKGROUND_BLOCK_ERRORS  = 814;
+
     // output KPIs
     KPISAMPLETYPE_PACKETS_TRANSMITTED_AGG_OUTPUT = 1101;
     KPISAMPLETYPE_PACKETS_RECEIVED_AGG_OUTPUT    = 1102;
